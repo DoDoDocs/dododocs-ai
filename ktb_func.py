@@ -8,7 +8,9 @@ from pathlib import Path
 import git
 from urllib.parse import urlparse
 import zipfile
+import logging
 
+logger = logging.getLogger(__name__)
 """**FUNCTIONS**"""
 def clone_git_repo(repo_url: str, clone_dir: str) -> bool:
     """Git 저장소를 클론하거나 갱신합니다."""
@@ -46,20 +48,43 @@ def file_list(path):
     return java_files
 
 def check_service_annotation(java_files):
-    service_files = []
-    # 전체 내용에서 어노테이션을 찾는 정규 표현식
-    pattern = re.compile(r'@(?:Service|Controller|RestController)\b')
+    """
+    Java 파일들을 어노테이션 타입별로 분류하여 딕셔너리로 반환
+    """
+    classified_files = {
+        'Service': [],
+        'Controller': [],
+        'RestController': []
+    }
+    
+    # 각 어노테이션별 패턴
+    patterns = {
+        'Service': re.compile(r'@Service\b'),
+        'Controller': re.compile(r'@Controller\b'),
+        'RestController': re.compile(r'@RestController\b')
+    }
 
     for file in java_files:
         if os.path.isfile(file):
-            with open(file, 'r', encoding='utf-8') as f:
-                content = f.read()
-                # 전체 내용에서 어노테이션이 있는지 검사
-                if pattern.search(content):
-                    service_files.append(file)
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    # 각 어노테이션 타입 검사
+                    for annotation, pattern in patterns.items():
+                        if pattern.search(content):
+                            classified_files[annotation].append(file)
+            except Exception as e:
+                logger.error(f"파일 읽기 오류 {file}: {str(e)}")
+                continue
 
-    print("Service/Controller num :", len(service_files))
-    return service_files
+    # 결과 로깅
+    for annotation, files in classified_files.items():
+        logger.info(f"{annotation} 파일 수: {len(files)}")
+        
+    total_files = sum(len(files) for files in classified_files.values())
+    logger.info(f"전체 어노테이션 파일 수: {total_files}")
+
+    return classified_files
 
 def get_path(file_path) :
     index = file_path.find("/main/java/") + len("/main/java/")

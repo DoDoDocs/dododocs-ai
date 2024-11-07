@@ -29,6 +29,7 @@ async def generate_doc(request: DocRequest):
     clone_dir = None
     repo_path = None
     try:
+        start_time = time.perf_counter()
         clone_dir, output_directory, repo_name = parse_repo_url(request.git_path)
         print("start")
         repo_path = repo_name+".zip"
@@ -102,7 +103,7 @@ async def generate_doc(request: DocRequest):
                 # DB 추가 실패해도 계속 진행
 
         end_time = time.perf_counter()
-        logger.info(f"전체 처리 시간: {end_time - start_time} 초")
+        print(f"전체 처리 시간: {end_time - start_time} 초")
 
         upload_key = output_directory.rstrip('/').lstrip('./')+".zip"
 
@@ -127,6 +128,7 @@ async def generate_doc(request: DocRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+    
     finally:
         # cleanup 로직을 finally 블록으로 이동
         try:
@@ -146,7 +148,7 @@ async def generate_doc(request: DocRequest):
 
         except Exception as cleanup_error:
             logger.error(f"Cleanup failed: {str(cleanup_error)}")
-
+    
     
 
 @app.post("/chat")

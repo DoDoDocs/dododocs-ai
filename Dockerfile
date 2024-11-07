@@ -16,6 +16,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 애플리케이션 코드 복사
 COPY . .
 
+# ChromaDB 데이터 디렉토리 생성
+RUN mkdir -p /app/chroma_data
+# 권한 설정 (필요한 경우)
+RUN chmod -R 777 /app/chroma_data
+
 # 환경 변수 설정
 # WORKDIR /app
 # ENV PYTHONPATH=/app

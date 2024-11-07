@@ -96,10 +96,11 @@ async def main():
     client = ChatClient()
     query = "How MemberController works?"
     #repo_url = "https://github.com/kakaotech-25/moheng.git"
-    repo_url = "https://github.com/DoDoDocs/dododocs-ai.git"
+    repo_url = "https://github.com/spring-projects/spring-boot.git"
+    s3_path = "spring-boot-main.zip"
 
     try:
-        response = client.db(git_path=repo_url, s3_path="ai-server.zip")
+        response = client.db(git_path=repo_url, s3_path=s3_path)
         pprint.pprint(response)
 
         '''

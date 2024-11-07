@@ -85,11 +85,13 @@ build_file_names = [
         'config.js', 'go.mod', 'Cargo.toml', 'Gemfile', 
         'pom.xml', 'package.json', '.env', 'Dockerfile', 'gradle', 'requirements.txt' ,'build'
     ]
-src_file_names = ['.py', '.js', '.ts', '.java', '.cpp', '.h', '.cs', '.go', '.rs', '.rb', '.php']
+src_file_names = ['.py', '.js', '.ts', '.java', '.cpp', '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
 
 client_gpt = OpenAI(api_key=OPENAI_API_KEY)
 client_claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-chroma_client = chromadb.PersistentClient()
+chroma_client = chromadb.PersistentClient(
+    path="/app/chroma_data"  # Docker 내부 경로
+)
 markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on,strip_headers=False)
 embedding_function = OpenAIEmbeddingFunction(api_key=OPENAI_API_KEY, model_name=EMBEDDING_MODEL)
 

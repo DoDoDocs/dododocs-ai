@@ -37,40 +37,35 @@ async def generate_text_async(session, prompt, contents):
         return None
 
 
-async def generate_docs_async(directory_path, output_directory):
+async def generate_docs_async(directory_path: dict[str, list], output_directory: str):
     """파일을 카테고리별로 비동기로 요약"""
-    service_code_contents = get_code_extention(directory_path)  # 파일 이름과 내용의 리스트를 가져온다고 가정
     async with aiohttp.ClientSession() as session:
-        # 각 파일 내용을 비동기로 요약 생성
-        tasks = [
-            generate_text_async(session, GENERATE_DOC_PROMPT, code_content) 
-            for code_content in service_code_contents
-        ]
-
-        summaries = await asyncio.gather(*tasks)  # 모든 작업이 완료될 때까지 기다림
-
-        # 파일명과 요약을 쌍으로 묶어 반복
-        for filename, summary in zip(directory_path, summaries):
-            # 파일명에서 카테고리 결정
-            if "Service" in filename:
-                category = "Service"
-            elif "RestController" in filename:
-                category = "RestController"
-            elif "Controller" in filename:
-                category = "Controller"
-            else:
-                category = "Others"
+        for category, files in directory_path.items():
+            # 각 카테고리의 파일들에 대한 코드 내용 가져오기
+            code_contents = get_code_extention(files)
             
-            # 카테고리 폴더 경로 생성
+            # 각 파일 내용을 비동기로 요약 생성
+            tasks = [
+                generate_text_async(session, GENERATE_DOC_PROMPT, content) 
+                for content in code_contents
+            ]
+
+            summaries = await asyncio.gather(*tasks)  # 모든 작업이 완료될 때까지 기다림
+            
+            # 카테고리 폴더 생성
             category_dir = os.path.join(output_directory, category)
             os.makedirs(category_dir, exist_ok=True)
-            
-            # 출력 파일 경로 설정
-            output_file_name = os.path.join(category_dir, extract_filename(filename).replace('.java', '.md'))
-            
-            # 파일 저장
-            with open(output_file_name, "w", encoding="utf-8") as file:
-                file.write(summary)
+
+            # 파일명과 요약을 쌍으로 묶어 저장
+            for filename, summary in zip(files, summaries):
+                if summary:
+                    output_file_name = os.path.join(
+                        category_dir, 
+                        extract_filename(filename).replace('.java', '.md')
+                    )
+                    
+                    with open(output_file_name, "w", encoding="utf-8") as file:
+                        file.write(summary)
 
     return None
 
@@ -233,7 +228,7 @@ def get_source_files(repo_dir: str) -> List[str]:
             # 파일명이 exclude_dirs에 포함된 문자열을 가지고 있지 않고,
             # build_file_names 중 하나와 일치하는 경우만 포함
             if (not any(excl in file for excl in exclude_dirs) and 
-                any(name in file for name in build_file_names)):
+                any(name in file for name in src_file_names)):
                 source_files.append(os.path.join(root, file))
     
     return source_files
