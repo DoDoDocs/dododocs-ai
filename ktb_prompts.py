@@ -1,58 +1,278 @@
 """**PROMPTS**"""
-GENERATE_DOC_PROMPT = '''Please provide comprehensive documentation for the given Service code, following these guidelines:
+SERVICE_DOC_PROMPT = '''Please provide comprehensive documentation for the given Spring Service code, following these guidelines:
 
-1. Overall Structure
-- Begin with a high-level overview of the codebase structure
-- Explain the purpose and function of Service code
-- Describe how the different parts of the code interact with each other
-- Include a Mermaid diagram showing the relationships between classes and repositories
+1. Service Overview
+- Begin with a high-level overview of the Service's purpose and responsibilities
+- Document the main business operations provided
+- List all public methods exposed by the service
+- Describe transaction requirements
+- Document common error scenarios and handling approaches
 
-
-2. Strategy Pattern Implementation
-- Explain how the strategy pattern is implemented in the codebase
-- Document the strategy interface and concrete strategy classes
-- Describe the context class that uses the strategies
-- Provide a class diagram showing:
-  * Strategy interface
-  * Context class
-  * Relationships between components
+2. Business Logic Handling
+- Document each public method including:
+  * Method signature and purpose
+  * Input parameters and validation rules
+  * Expected return values
+  * Transaction boundaries and isolation levels
+  * Business rules and validation logic
+  * Error scenarios and handling strategies
+  * Code examples of usage
 
 3. Detailed Component Documentation
-For each component (class, function, method), provide:
+For each component, provide:
 
-a. Classes:
-- Class name and brief description of its purpose
-- Explanation of class attributes
-- Description of the class's role in the larger system
-- Any inheritance or relationships with other classes
+a. Service Class:
+- Class name and business purpose
+- Dependency injections and autowired components
+- Transaction management configuration
+- Exception handling strategies
+- Validation approaches
 
-b. Methods and Functions:
-- Name and purpose of the all method/function
-- Parameters: name, type, and description of each parameter
-- Return value: type and description of what is returned
-- Code examples of usage
+b. Business DTOs:
+- Field descriptions and validation constraints
+- Data transformation/mapping logic
+- Domain model relationships
 
-4. Implementation Flow
-Include a sequence diagram showing:
-- How client code interacts with the context
-- How context delegates to strategy
-- Strategy execution flow
-- Return of results
+4. Integration Points
+- Document interactions with:
+  * Repositories and database operations
+  * Other services
+  * External systems (if applicable)
+  * Event publishing/handling (if applicable)
 
-Remember to use clear, concise language and provide context where necessary. The goal is to create documentation that helps both new and experienced developers understand and work with the code effectively. Response documentation only. Use markdown format.
+5. Implementation Flow
+Include diagrams showing:
+- Business logic processing pipeline
+- Service-Repository interaction
+- Error handling flow
+- Transaction boundaries
 
 Include Mermaid diagrams for:
-1. Class diagram showing strategy pattern structure
-2. Sequence diagram showing runtime behavior
+1. Component diagram showing service dependencies
+2. Sequence diagram showing business logic flow
+3. State diagram for complex operations (if applicable)
+
+6. Testing Considerations
+- Document key test scenarios
+- Describe mocking requirements
+- List critical business edge cases to consider
+
+Remember to use clear, concise language and provide context where necessary. Include common usage examples with code snippets for each business method. Response documentation only. Use markdown format.
 '''
 
-SUMMARY_PROMPT = """Please provide a concise summary of this authentication service documentation, focusing on:
+CONTROLLER_DOC_PROMPT = '''Please provide comprehensive documentation for the given Spring Controller code, following these guidelines:
 
-1. The main purpose and core functionality of the service
-2. Key components and their interactions
-3. The authentication flow from client request to token generation
+1. Controller Overview
+- Begin with a high-level overview of the Controller's purpose and responsibilities
+- Document the base URL path and any common request mappings
+- List all REST endpoints exposed by the controller
+- Describe authentication/authorization requirements
+- Document common response formats and status codes
 
-Please keep the summary clear and organized with bullet points where appropriate. No need to include code examples or detailed method signatures - focus on the high-level architectural overview and main concepts.
+2. Request Handling
+- Document each @RequestMapping method including:
+  * HTTP method (GET, POST, etc.)
+  * URL path and parameters
+  * Request body format (if applicable)
+  * Required headers or cookies
+  * Expected response format
+  * Possible response status codes and their meanings
+  * Error handling and validation
+
+3. Detailed Component Documentation
+For each component, provide:
+
+a. Controller Class:
+- Class name and purpose
+- Dependency injections and autowired components
+- Cross-cutting concerns (logging, validation, etc.)
+- Security annotations and access control
+- Exception handling strategies
+
+b. Request/Response DTOs:
+- Field descriptions and validation constraints
+- Data transformation/mapping logic
+- Serialization/deserialization details
+
+4. Integration Points
+- Document interactions with:
+  * Services and repositories
+  * External APIs or systems
+  * Message queues or events
+  * Caching mechanisms
+
+5. Implementation Flow
+Include diagrams showing:
+- Request processing pipeline
+- Controller-Service-Repository interaction
+- Error handling flow
+- Authentication/Authorization flow
+
+Include Mermaid diagrams for:
+1. Component diagram showing controller dependencies
+2. Sequence diagram showing request processing flow
+3. State diagram for complex operations (if applicable)
+
+6. Testing Considerations
+- Document key test scenarios
+- Describe mocking requirements
+- List critical edge cases to consider
+
+Remember to use clear, concise language and provide context where necessary. Include common usage examples and curl commands for API endpoints. Response documentation only. Use markdown format.
+'''
+
+TEST_DOC_PROMPT = '''Please provide comprehensive documentation for the given Spring Test code, following these guidelines:
+
+1. Test Suite Overview
+- Describe the scope and purpose of the test suite
+- Document test categories (unit, integration, e2e)
+- List key testing frameworks and tools used (JUnit, REST Docs, etc.)
+- Explain test configuration and setup
+
+2. API Documentation Tests
+- Document REST Docs test configuration
+- Detail API documentation generation process
+- For each API endpoint test:
+  * HTTP request specifications
+    - Method, path, parameters
+    - Headers and authentication
+    - Request body structure
+    - Example request payloads
+  * HTTP response specifications
+    - Status codes and their meanings
+    - Response headers
+    - Response body structure
+    - Example response payloads
+  * Validation constraints
+  * Error scenarios and responses
+
+3. Test Environment
+- Document required configuration properties
+- Describe test database setup
+- Detail mock services and test doubles
+- Explain test data preparation
+- Document required Spring profiles
+
+4. Test Categories
+For each test category, document:
+
+a. Unit Tests:
+- Test class structure and naming conventions
+- Mocking strategies and tools
+- Common test utilities and helpers
+- Test lifecycle management
+
+b. Integration Tests:
+- Test container configuration
+- Database initialization scripts
+- External service mocks
+- Security configuration for tests
+- API contract validation tests
+
+c. End-to-End Tests:
+- Test environment setup
+- Data seeding approach
+- Cleanup procedures
+- Performance considerations
+
+5. Test Implementation Details
+For each test class/method:
+- Purpose and scope of tests
+- Test data setup and prerequisites
+- Expected outcomes and assertions
+- API documentation snippets
+- Cleanup requirements
+- Known limitations or constraints
+
+6. API Testing Patterns
+Document patterns for:
+- Request/Response documentation
+- Input validation testing
+- Error response testing
+- Authentication/Authorization testing
+- Pagination testing
+- File upload/download testing
+- Async operation testing
+
+7. Test Execution Flow
+Include diagrams showing:
+- Test setup and documentation generation flow
+- Test data flow
+- Mock interaction patterns
+- Verification steps
+
+Include Mermaid diagrams for:
+1. Test hierarchy and organization
+2. Test execution lifecycle
+3. Documentation generation process
+4. Mock interaction patterns
+
+8. Documentation Generation
+- REST Docs snippet configuration
+- Custom snippet creation
+- Documentation assembly process
+- Template customization
+- Output format configuration
+- Version management
+
+9. Best Practices
+- Document naming conventions
+- Describe assertion strategies
+- Explain test isolation approaches
+- Detail documentation maintenance
+- Performance optimization techniques
+
+10. Example Documentation
+Include examples of:
+- REST Docs test cases
+- Generated documentation snippets
+- Custom documentation templates
+- Common test patterns
+- Documentation customization
+
+Remember to use clear, concise language and provide practical examples. Focus on both test maintainability and comprehensive API documentation. Response markdown documentation only. Use markdown format.
+'''
+
+SUMMARY_PROMPT = """Please provide a concise summary of the provided documentation, focusing on:
+
+1. Component Overview
+- Main responsibilities and purposes
+- Key features and capabilities
+- Core patterns and approaches used
+
+2. Architecture & Implementation
+- Major components and their roles
+- Component interactions and dependencies
+- Key implementation patterns
+- Critical flows and processes
+
+3. Technical Considerations
+- Error handling strategies
+- Common patterns and conventions
+- Performance considerations
+- Testing approaches
+
+Please keep the summary clear and organized with bullet points where appropriate. Focus on high-level architectural patterns and main concepts without implementation details.
+
+Note: Examples of generated summaries will look like:
+
+For Services:
+- Core business logic and domain operations
+- Service interaction patterns
+- Transaction management approaches
+- Business error handling strategies
+
+For Controllers:
+- API endpoints and capabilities
+- Request/response handling patterns
+- Controller organization patterns
+- API error handling approaches
+
+For Tests:
+- Test coverage and strategies
+- Test organization patterns
+- Documentation testing approaches
+- Key test scenarios
 """
 
 #doc 번역
@@ -83,6 +303,144 @@ TRANSLATE_PROMPT = '''당신은 전문 번역가입니다. 제가 제공하는 �
 '''
 
 PROMPT_README = f"""Please analyze the entire repository structure and generate a README.md in the following format:
+
+# [Project Name]
+
+## 🖼 Preview
+
+
+##  Table of Contents
+
+- [ Overview](#-overview)
+- [ Analysis](#-features)
+- [ Project Structure](#-project-structure)
+- [ Getting Started](#-getting-started)
+  - [ Prerequisites](#prerequisites)
+  - [ Installation](#installation)
+  - [ Usage](#usage)
+
+
+## 📝 Overview
+[Brief overview of the project]
+- Main purpose of the project
+
+### Main Purpose
+- [Describe the primary goal and purpose of your project]
+- [Explain what problem it solves]
+- [Mention target users/audience]
+
+### Key Features
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+### Core Technology Stack
+-don't have expose all sections, Skip sections if no relevant technology is used.
+-if you need to make sections, you can make sections like this:
+- Frontend: [e.g., React, Vue, Angular]
+- Backend: [e.g., Node.js, Python, Java]
+- Database: [e.g., PostgreSQL, MongoDB]
+- Other Sections(AI, Model, etc.): [e.g., Python, Java]
+
+## 📊 Analysis
+[Key analysis findings]
+- Data analysis results
+- Performance metrics
+- Key insights
+<!-- Summary of main points from Service.md -->
+
+## 📁 Project Structure
+-don't have expose all files, expose important files with Key Features
+```
+[project name]
+├── 📁 [folder1]
+│   ├── [file1]
+│   └── [file2]
+├── 📁 [folder2]
+│   ├── [file1]
+│   └── [file2]
+└── ...
+```
+
+## 🚀 Getting Started
+-If there is not enough information, do not need to write it.
+### Prerequisites
+- Required environment setup
+- Required dependencies
+
+### Installation
+```bash
+# Clone the repository
+git clone [repository URL]
+
+# Install required packages
+[installation commands]
+
+# Configure environment
+[configuration commands]
+```
+
+### Usage
+-If there is not enough information, do not need to write it.
+```bash
+# How to run
+[execution commands]
+```
+"""
+
+PROMPT_USAGE = """Please analyze the entire build files, structure and generate in the following format:
+
+## 🚀 Getting Started
+-If there is not enough information, do not need to write it.
+### Prerequisites
+- Required environment setup
+- Required dependencies
+- Package manager
+- Database system
+- Version control system
+- Others (AI, Model, etc.)
+
+### Installation
+```bash
+# Clone the repository
+git clone [repository URL]
+cd [project-directory]
+
+# Install required packages
+[installation commands]
+
+# Configure environment
+[configuration commands]
+```
+
+### Usage
+-If there is not enough information, do not need to write it.
+```bash
+# How to run
+[execution commands]
+```
+"""
+
+DALLE_PROMPT = '''
+Draw the core features clearly. 
+A simple vector logo for project.
+project : '''
+
+CHATBOT_PROMPT = """You are a helpful assistant.
+
+When answering:
+1. Only use information from the provided context and chat history
+2. If the context is relevant but insufficient to fully answer the query, use information from the chat history
+3. If you're unsure about the relevance of the context, explain why
+4. Never make up information that's not in the context
+
+Remember to:
+- Be concise and direct
+- Cite specific parts of the context when relevant
+- Maintain a helpful and professional tone"""
+
+PROMPT_README_GEMINI = f"""
+analyze the code and generate only one README in the following format:
 
 # [Project Name]
 
@@ -167,7 +525,65 @@ git clone [repository URL]
 ```
 """
 
-PROMPT_USAGE = """Please analyze the entire build files, structure and generate in the following format:
+PROMPT_README_FROM_SUMMARY = f"""
+Please create a README based on the provided README in the following format:
+
+# [Project Name]
+
+## 🖼 Preview
+
+
+##  Table of Contents
+
+- [ Overview](#-overview)
+- [ Analysis](#-features)
+- [ Project Structure](#-project-structure)
+- [ Getting Started](#-getting-started)
+  - [ Prerequisites](#prerequisites)
+  - [ Installation](#installation)
+  - [ Usage](#usage)
+
+
+## 📝 Overview
+[Brief overview of the project]
+- Main purpose of the project
+
+### Main Purpose
+- [Describe the primary goal and purpose of your project]
+- [Explain what problem it solves]
+- [Mention target users/audience]
+
+### Key Features
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+### Core Technology Stack
+-don't have expose all sections, Skip sections if no relevant technology is used.
+- Frontend: [e.g., React, Vue, Angular]
+- Backend: [e.g., Node.js, Python, Java]
+- Database: [e.g., PostgreSQL, MongoDB]
+- Other Tools: [e.g., Docker, Redis]
+
+## 📊 Analysis
+[Key analysis findings]
+- Data analysis results
+- Performance metrics
+- Key insights
+<!-- Summary of main points from Service.md -->
+
+## 📁 Project Structure
+-don't have expose all files, expose important files with Key Features
+```
+[project name]
+├── 📁 [folder1]
+│   ├── [file1]
+│   └── [file2]
+├── 📁 [folder2]
+│   ├── [file1]
+│   └── [file2]
+└── ...
+```
 
 ## 🚀 Getting Started
 -If there is not enough information, do not need to write it.
@@ -193,24 +609,4 @@ git clone [repository URL]
 # How to run
 [execution commands]
 ```
-
----"""
-
-DALLE_PROMPT = '''
-Draw the core features clearly. 
-A simple vector logo for project.
-project : '''
-
-CHATBOT_PROMPT = """You are a helpful assistant.
-
-When answering:
-1. Only use information from the provided context and chat history
-2. If the context is relevant but insufficient to fully answer the query, use information from the chat history
-3. If you're unsure about the relevance of the context, explain why
-4. Never make up information that's not in the context
-
-Remember to:
-- Be concise and direct
-- Cite specific parts of the context when relevant
-- Maintain a helpful and professional tone"""
-
+"""

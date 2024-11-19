@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # requirements.txt 복사 및 패키지 설치
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
+RUN pip install --no-cache-dir google-generativeai --verbose
 # 애플리케이션 코드 복사
 COPY . .
 
@@ -25,6 +25,7 @@ RUN chmod -R 777 /app/chroma_data
 # WORKDIR /app
 # ENV PYTHONPATH=/app
 # ENV PORT=8000
+ENV IS_DOCKER=true
 
 # 포트 노출
 EXPOSE 8000
