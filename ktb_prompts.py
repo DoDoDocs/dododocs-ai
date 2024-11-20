@@ -610,3 +610,8 @@ git clone [repository URL]
 [execution commands]
 ```
 """
+
+DALLE_PROMPT = '''
+Draw the core features clearly. 
+A simple vector logo for project.
+project : '''

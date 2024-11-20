@@ -468,7 +468,7 @@ class DocumentProcessor:
                 return completion.content[0].text, None  # 텍스트만 반환
             
             else:
-                params["model"] = "gpt-4o-mini"
+                params["model"] = "GPT_MODEL"
                 params["stop"] = stop
                 params["logprobs"] = logprobs
                 params["top_logprobs"] = top_logprobs

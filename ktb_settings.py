@@ -35,14 +35,14 @@ for var in required_vars:
 
 """**PARAMETER SETTINGS**"""
 #모델 설정
-#MODEL = 'gpt-4o-mini' #or gpt-4o
-#MODEL = 'claude-3-5-sonnet-20241022'
+#MODEL = 'GPT_MODEL' #or gpt-4o
 MODEL = 'gemini-1.5-flash'
+GPT_MODEL = 'gpt-4o-mini'
 TEMPERATURE = 0.1
 SEED = 213
 TOP_LOGPROBS = 5 #logprob token 개수
 
-if MODEL.startswith('gpt'):
+if MODEL.startswith('gpt' or 'claude'):
     MAX_TOKENS_PER_BATCH = 1500000
     MAX_TOKEN_LENGTH = 120000
 elif MODEL.startswith('gemini'):
@@ -111,6 +111,7 @@ SRC_FILE_NAMES = ['.py', '.js', '.ts', '.java', '.cpp', '.h', '.hpp', '.cs', '.g
 MAX_RETRIES = 2 # 최대 재시도 횟수
 RETRY_DELAY = 3 # 재시도 간격 (초)
 INCLUDE_TEST = False
+
 client_claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 client_gpt = OpenAI(api_key=OPENAI_API_KEY)
 client_gemini = OpenAI(

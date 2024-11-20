@@ -8,7 +8,13 @@ import tiktoken
 import aiofiles
 from token_chunker import *
 from ktb_settings import *
+import io
+import requests
+from PIL import Image
+import re
 
+from ktb_settings import client_gpt
+from ktb_prompts import DALLE_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +39,7 @@ class TextProcessor:
     @staticmethod
     def count_tokens(text: str) -> int:
         try:
-            encoding = tiktoken.encoding_for_model("gpt-4o-mini")
+            encoding = tiktoken.encoding_for_model("GPT_MODEL")
             return len(encoding.encode(text, disallowed_special=()))
         except Exception as e:
             logger.error(f"토큰 계산 오류: {str(e)}")
@@ -64,3 +70,61 @@ class AsyncFileIO:
         async with aiofiles.open(path, "r", encoding="utf-8") as f:
             return await f.read() 
 
+class ImageProcessor:
+    """이미지 생성 및 README 업데이트 관련 유틸리티"""
+
+    def __init__(self):
+        self.client_gpt = client_gpt
+        self.dalle_prompt = DALLE_PROMPT
+
+    def read_description_from_readme(self, file_path="README.md"):
+        """README 파일에서 'Overview' 섹션 추출"""
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                content = file.read()
+                # Description 섹션을 정규 표현식으로 추출
+                description_match = re.search(r"Overview\n(.*?)(### Main Purpose)", content, re.S)
+
+                if description_match:
+                    return description_match.group(1).strip()
+                else:
+                    raise ValueError("Could not find 'Overview' or 'Main Purpose' sections in the README.md")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File '{file_path}' does not exist.")
+        
+    def generate_image(self, description, new_size=(400, 400)):
+        """DALL-E를 사용하여 이미지 생성"""
+        response = self.client_gpt.images.generate(
+            model="dall-e-3",
+            prompt=self.dalle_prompt + description,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+        image_url = response.data[0].url
+        image_data = requests.get(image_url).content
+
+        img = Image.open(io.BytesIO(image_data))
+        resized_img = img.resize(new_size)
+
+        image_path = f"generated_image.png"
+        resized_img.save(image_path)
+
+        return image_url, image_path
+
+    def update_readme_with_image(self, file_path="README.md", image_path="./generated_image.png"):
+        """README 파일에 이미지 삽입"""
+        with open(file_path, "r+", encoding="utf-8") as file:
+            content = file.read()
+
+            # 'Preview' 섹션 뒤에 이미지를 삽입
+            new_content = re.sub(
+                r"(Preview\n)(.*?)(##|$)",
+                f"Preview\n\n<img src='{image_path}' width='400' height='400'/>\n\n\\3",
+                content, flags=re.S
+            )
+
+            # 파일에 변경 사항 쓰기
+            file.seek(0)
+            file.write(new_content)
+            file.truncate()

@@ -10,9 +10,9 @@ import os
 
 from ktb_document_processor import DocumentProcessor
 from ktb_api_client import APIClient
-from ktb_utils import FileUtils
+from ktb_utils import FileUtils, ImageProcessor
 from ktb_settings import *
-from ktb_chatbot import codebase_chat
+from ktb_chatbot import *
 from ktb_func import *
 
 
@@ -27,6 +27,7 @@ app = FastAPI()
 api_client = APIClient(OPENAI_API_KEY)
 doc_processor = DocumentProcessor(api_client)
 file_utils = FileUtils()
+image_processor = ImageProcessor()
 
 class DocRequest(BaseModel):
     repo_url: str
@@ -38,6 +39,8 @@ class ChatRequest(BaseModel):
     query: str
     chat_history: Optional[List[Dict[str, Any]]] = None
 
+class ImageRequest(BaseModel):
+    repo_url: str
 
 async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
@@ -125,7 +128,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, user_name, inc
                 logger.info(f"{RETRY_DELAY}초 후에 재시도합니다...")
                 await asyncio.sleep(RETRY_DELAY)  # 재시도 간격 대기
 
-async def perform_readme_only_generation(repo_url, clone_dir, repo_name, user_name, include_test):
+async def perform_readme_only_generation(repo_url, clone_dir, repo_name, user_name):
     """README 생성 작업만 백그라운드에서 수행"""
     attempt = 0
     while attempt < MAX_RETRIES:
@@ -152,9 +155,11 @@ async def perform_readme_only_generation(repo_url, clone_dir, repo_name, user_na
                 await asyncio.sleep(RETRY_DELAY)  # 재시도 간격 대기
 
 
-async def perform_tasks_and_cleanup(tasks, cleanup_args):
+async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     """백그라운드 작업을 수행하고 완료되면 cleanup 실행"""
-    await asyncio.gather(*tasks)  # 모든 백그라운드 작업이 완료될 때까지 대기
+    await asyncio.gather(*tasks)  # 모든 백그라운드 작업이 완료될 때까지 
+    await add_data_to_db(db_name, clone_dir)
+    print(f"add_data_to_db 완료: {db_name}, {clone_dir}")
     await cleanup(*cleanup_args)  # cleanup 실행
 
 
@@ -187,10 +192,10 @@ async def generate(request: DocRequest, background_tasks: BackgroundTasks):
             tasks.append(asyncio.create_task(
                 perform_readme_only_generation(repo_dir, clone_dir, repo_name, user_name)
             ))
-            response = {"docs_s3_key": docs_s3_key}
+            response = {"readme_s3_key": readme_s3_key, "docs_s3_key": None}
 
         # 백그라운드에서 작업과 cleanup 실행
-        background_tasks.add_task(perform_tasks_and_cleanup, tasks, (repo_name+".zip", clone_dir, "Docs.zip"))
+        background_tasks.add_task(perform_tasks_and_cleanup, tasks, (repo_name+".zip", clone_dir, "Docs.zip"), repo_name, clone_dir)
 
         return response
 
@@ -214,7 +219,7 @@ async def chat(request: ChatRequest):
         response = codebase_chat(
             request.query, 
             request.repo_url, 
-            request.chat_historyre
+            request.chat_history
         )
         
         return StreamingResponse( 
@@ -233,6 +238,33 @@ async def test(task_name: str):
     """비동기 백그라운드 작업"""
     await asyncio.sleep(2)  # 비동기 작업 예시
     print(f"{task_name} 완료")
+
+
+@app.post("/generate_image")
+async def generate_image(request: ImageRequest):
+    """이미지 생성 엔드포인트"""
+    try:
+        repo_name, user_name = parse_repo_url(request.repo_url)
+        s3_path = f"{user_name}_{repo_name}_README.md"
+        current_directory = os.getcwd()
+        repo_path = os.path.join(current_directory, s3_path)
+        download_zip_from_s3(BUCKET_NAME, s3_path, repo_path)
+
+        description = image_processor.read_description_from_readme(s3_path)
+        image_url, image_path = image_processor.generate_image(description)
+
+        return {"image_url": image_url}   
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"오류 발생: {str(e)}"
+        )
+    finally:
+        if os.path.exists(repo_path):
+            os.remove(repo_path)
+        if os.path.exists(image_path):
+            os.remove(image_path)
 
 @app.post("/test")
 async def tttest():

@@ -80,22 +80,22 @@ async def main():
 
     try:
         # 문서 및 README 생성 테스트
-        print("\n문서 및 README 생성 테스트:")
-        generate_response = client.generate(repo_url=repo_url, s3_path=s3_path, include_test=False)
-        pprint.pprint(generate_response)
+        # print("\n문서 및 README 생성 테스트:")
+        # generate_response = client.generate(repo_url=repo_url, s3_path=s3_path, include_test=False)
+        # pprint.pprint(generate_response)
         
-        '''
+        
         # 첫 번째 질문
         query = "How MemberController works?"
         print(f"\n질문: {query}\n")
         print("응답:")
         full_response = ''
-
+        
         # 스트리밍 응답 처리
         for response_chunk in client.chat(repo_name=repo_url, query=query):
             print(response_chunk, end='', flush=True)
             full_response += response_chunk
-
+        
         # 두 번째 질문: 이전 응답을 한국어로 번역 요청
         print(f"\n\n질문: translate your answer to korean\n")
         print("응답:")
@@ -107,7 +107,7 @@ async def main():
         # 번역 요청 스트리밍 처리
         for response_chunk in client.chat(repo_name=repo_url, query="translate your answer to korean", chat_history=chat_history):
             print(response_chunk, end='', flush=True)
-        '''
+        
         
     except Exception as e:
         logger.error(f"테스트 실패: {str(e)}")

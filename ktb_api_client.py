@@ -50,7 +50,7 @@ class APIClient:
     ) -> Dict[str, any]:
         """API 요청 JSON 데이터 생성"""
         params = {
-            "model": 'gpt-4o-mini',
+            "model": 'GPT_MODEL',
             "messages": messages,
             "temperature": self.temperature
         }
