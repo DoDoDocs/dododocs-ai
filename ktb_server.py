@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, status, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import logging
@@ -16,12 +17,23 @@ from ktb_chatbot import *
 from ktb_func import *
 
 
+origins = [
+    "http://localhost:8080"
+]
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
+)
 
 # API 클라이언트 및 문서 프로세서 초기화
 api_client = APIClient(OPENAI_API_KEY)
