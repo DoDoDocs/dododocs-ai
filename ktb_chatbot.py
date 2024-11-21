@@ -3,9 +3,11 @@ from ktb_settings import *
 from ktb_func import *
 
 import os
-from typing import List, Dict, Optional, Tuple, Any, Generator
+from typing import List, Dict, Optional, Any, Generator
 from pathlib import Path
 import logging
+import asyncio
+import aiofiles
 
 """**FUNCTION FOR CHAT**"""
 # Configure logging
@@ -45,13 +47,12 @@ def get_embedding(texts: List[str], model: str = EMBEDDING_MODEL) -> List[float]
         raise
 
 
-def add_data_to_db(repo_name: str, path: str) -> int:
+async def add_data_to_db(repo_name: str, path: str) -> int:
     """
     Process files by chunking them, generating embeddings, and storing in ChromaDB.
 
     Args:
         repo_name (str): Name of the repository/collection
-        filenames (List[str]): List of filenames to process
         path (str): Path to the repository directory
 
     Returns:
@@ -75,79 +76,80 @@ def add_data_to_db(repo_name: str, path: str) -> int:
             for filename in files:
                 if filename == '.DS_Store':
                     continue
-                try:
-                    file_path = search_file(repo_path, filename)
-                    # Check if file exists
-                    if not file_path.exists():
-                        logger.warning(f"File not found: {file_path}")
-                        continue
+                if filename.endswith('.md'):
+                    try:
+                        file_path = search_file(repo_path, filename)
+                        # Check if file exists
+                        if not file_path.exists():
+                            logger.warning(f"File not found: {file_path}")
+                            continue
 
-                    # Check if file is readable
-                    if not file_path.is_file():
-                        logger.warning(f"Not a valid file: {file_path}")
-                        continue
+                        # Check if file is readable
+                        if not file_path.is_file():
+                            logger.warning(f"Not a valid file: {file_path}")
+                            continue
 
-                    with open(file_path, 'r', encoding='utf-8') as file:
-                        doc = file.read()
-                        if doc.strip():  # Only process non-empty documents
-                            # Create metadata for the current file
-                            file_metadata = {
-                                "filename": filename,
-                                "path": str(file_path),
-                                "repository": repo_name
-                            }
+                        async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
+                            doc = await file.read()
+                            if doc.strip():  # Only process non-empty documents
+                                # Create metadata for the current file
+                                file_metadata = {
+                                    "filename": filename,
+                                    "path": str(file_path),
+                                    "repository": repo_name
+                                }
 
-                            # Split document into chunks
-                            chunks = markdown_splitter.split_text(doc)
+                                # Split document into chunks
+                                chunks = markdown_splitter.split_text(doc)
 
-                            if chunks:  # Only process if we have chunks
-                                # Process chunks and clean text
-                                chunk_contents = [
-                                    chunk.page_content.replace('\n', ' ').strip()
-                                    for chunk in chunks
-                                    if chunk.page_content.strip()  # Skip empty chunks
-                                ]
-
-                                if chunk_contents:  # Only add if we have valid chunks
-                                    # Generate IDs for current chunks
-                                    chunk_ids = [
-                                        f"{repo_name}_{i}"
-                                        for i in range(chunk_id_counter, chunk_id_counter + len(chunk_contents))
+                                if chunks:  # Only process if we have chunks
+                                    # Process chunks and clean text
+                                    chunk_contents = [
+                                        chunk.page_content.replace('\n', ' ').strip()
+                                        for chunk in chunks
+                                        if chunk.page_content.strip()  # Skip empty chunks
                                     ]
 
-                                    # Create metadata list for all chunks from this file
-                                    chunk_metadatas = [file_metadata for _ in range(len(chunk_contents))]
+                                    if chunk_contents:  # Only add if we have valid chunks
+                                        # Generate IDs for current chunks
+                                        chunk_ids = [
+                                            f"{repo_name}_{i}"
+                                            for i in range(chunk_id_counter, chunk_id_counter + len(chunk_contents))
+                                        ]
 
-                                    # Add chunks to vector store
-                                    vector_store.add(
-                                        documents=chunk_contents,
-                                        metadatas=chunk_metadatas,
-                                        ids=chunk_ids
-                                    )
+                                        # Create metadata list for all chunks from this file
+                                        chunk_metadatas = [file_metadata for _ in range(len(chunk_contents))]
 
-                                    # Update counter and log success
-                                    chunk_id_counter += len(chunk_contents)
-                                    total_files_processed += 1
-                                    logger.info(f"Successfully processed file: {filename} - Added {len(chunk_contents)} chunks")
+                                        # Add chunks to vector store
+                                        vector_store.add(
+                                            documents=chunk_contents,
+                                            metadatas=chunk_metadatas,
+                                            ids=chunk_ids
+                                        )
+
+                                        # Update counter and log success
+                                        chunk_id_counter += len(chunk_contents)
+                                        total_files_processed += 1
+                                        print(f"Successfully processed file: {filename} - Added {len(chunk_contents)} chunks")
+                                    else:
+                                        logger.warning(f"No valid chunks found in file: {filename}")
                                 else:
-                                    logger.warning(f"No valid chunks found in file: {filename}")
+                                    logger.warning(f"No chunks generated from file: {filename}")
                             else:
-                                logger.warning(f"No chunks generated from file: {filename}")
-                        else:
-                            logger.warning(f"Empty file skipped: {filename}")
+                                logger.warning(f"Empty file skipped: {filename}")
 
-                except UnicodeDecodeError as e:
-                    logger.error(f"Unicode decode error in file {filename}: {str(e)}")
-                    continue
-                except Exception as e:
-                    logger.error(f"Error processing file {filename}: {str(e)}")
-                    continue
+                    except UnicodeDecodeError as e:
+                        logger.error(f"Unicode decode error in file {filename}: {str(e)}")
+                        continue
+                    except Exception as e:
+                        logger.error(f"Error processing file {filename}: {str(e)}")
+                        continue
 
         if total_files_processed == 0:
             raise ValueError("No valid files were processed")
 
         total_chunks = vector_store.count()
-        logger.info(f"Successfully processed {total_files_processed} files with total {total_chunks} chunks in {repo_name}")
+        print(f"Successfully processed {total_files_processed} files with total {total_chunks} chunks in {repo_name}")
         return total_chunks
 
     except Exception as e:
@@ -205,7 +207,7 @@ User Query / Instruct: {query}
         full_prompt.append({"role": "user", "content": user_prompt})
         # Generate response using OpenAI
         response = client_gpt.chat.completions.create(
-            model=MODEL,  # Updated from deprecated davinci-003
+            model="GPT_MODEL",  # Updated from deprecated davinci-003
             messages=full_prompt,
             temperature=0.12,
             stream = True
@@ -213,14 +215,13 @@ User Query / Instruct: {query}
         
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
-                #print(chunk.choices[0].delta.content)
                 yield chunk.choices[0].delta.content
 
     except Exception as e:
         logger.error(f"Error generating response: {str(e)}")
         raise
 
-def codebase_chat(query: str, git_path: str, chat_history: List[dict] = []) -> Any:
+def codebase_chat(query: str, repo_url: str, chat_history: List[dict] = []) -> Any:
     """
     Chat with a codebase by querying the vector store and generating responses.
 
@@ -232,14 +233,14 @@ def codebase_chat(query: str, git_path: str, chat_history: List[dict] = []) -> A
     Returns:
         Tuple[str, Dict[str, Any]]: Generated response and retrieved documents with metadata
     """
-    _, _, repo_name = parse_repo_url(git_path)
+    repo_name, _ = parse_repo_url(repo_url)
     try:
         # Validate repository exists
         vector_store = chroma_client.get_collection(
             name=repo_name,
             embedding_function=embedding_function
         )
-
+        
         # Get the collection
         db = vector_store
 
@@ -250,9 +251,9 @@ def codebase_chat(query: str, git_path: str, chat_history: List[dict] = []) -> A
             response = generate_response(query, db)
 
         # Log the interaction
-        logger.info(f"""
+        print(f"""
             Chat Interaction:
-            Repository: {git_path}
+            Repository: {repo_url}
             Query: {query}
             """)
 

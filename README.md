@@ -1,84 +1,116 @@
-# 42 Project
+# Moheng
 
 ## 🖼 Preview
-
-<img src='./generated_image.png' width='400' height='400'/>
+![Preview Image](https://via.placeholder.com/800x400?text=Project+Preview)
 
 ##  Table of Contents
 
-- [ Overview](#-overview)
-- [ Analysis](#-analysis)
-- [ Project Structure](#-project-structure)
-- [ Getting Started](#-getting-started)
-  - [ Prerequisites](#prerequisites)
-  - [ Installation](#installation)
-  - [ Usage](#usage)
+- [Moheng](#moheng)
+  - [🖼 Preview](#-preview)
+  - [Table of Contents](#table-of-contents)
+  - [📝 Overview](#-overview)
+    - [Main Purpose](#main-purpose)
+    - [Key Features](#key-features)
+    - [Core Technology Stack](#core-technology-stack)
+  - [📊 Analysis](#-analysis)
+  - [📁 Project Structure](#-project-structure)
+  - [🚀 Getting Started](#-getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Usage](#usage)
 
 ## 📝 Overview
-The 42 Project is a comprehensive codebase designed to facilitate various programming tasks and challenges. It serves as a learning platform for developers to enhance their coding skills through practical exercises and projects.
+Moheng is a comprehensive travel planning application that integrates various features such as trip scheduling, user authentication, and personalized recommendations based on user preferences and historical data.
 
 ### Main Purpose
-- The primary goal of the project is to provide a structured environment for learning and practicing programming.
-- It solves the problem of finding a comprehensive and interactive way to learn coding concepts and techniques.
-- The target audience includes students, self-learners, and anyone interested in improving their programming skills.
+- The primary goal of Moheng is to provide users with a seamless travel planning experience by allowing them to create, manage, and share their travel itineraries.
+- It solves the problem of disorganized travel plans by offering a structured platform for users to plan their trips effectively.
+- The target audience includes travelers, travel enthusiasts, and anyone looking to organize their travel experiences.
 
 ### Key Features
-- Interactive coding challenges and exercises.
-- Comprehensive documentation for each component.
-- Integration with various programming languages and tools.
+- User authentication and profile management.
+- Trip scheduling and itinerary management.
+- Integration with external AI models for personalized trip recommendations.
+- Live information and keyword-based trip suggestions.
 
 ### Core Technology Stack
-- Frontend: None specified
-- Backend: Python
-- Database: None specified
-- Other Tools: FastAPI, OpenAI API, ChromaDB
+- Frontend: React, Vite
+- Backend: Spring Boot
+- Database: PostgreSQL
+- Other Sections: Python, FastAPI for AI model serving
 
 ## 📊 Analysis
-The analysis of the project reveals key insights into its structure and functionality:
-- The project is organized into multiple modules, each handling specific functionalities.
-- Performance metrics indicate efficient handling of requests and responses, especially in the chat functionalities.
-- The documentation generation process is automated, ensuring up-to-date information is always available.
+The application utilizes various data analysis techniques to provide personalized recommendations based on user preferences and historical data. Key insights include:
+- User engagement metrics and preferences are analyzed to improve recommendation algorithms.
+- Performance metrics are monitored to ensure a responsive user experience.
 
 ## 📁 Project Structure
 ```
-42
-├── 📁 ktb_chatbot.py
-├── 📁 ktb_client.py
-├── 📁 ktb_docs.py
-├── 📁 ktb_func.py
-├── 📁 ktb_prompts.py
-├── 📁 ktb_readme.py
-├── 📁 ktb_server.py
-├── 📁 ktb_settings.py
-├── 📁 ktb_src.py
+moheng
+├── 📁 ai
+│   ├── 📁 model_serving
+│   │   ├── 📁 application
+│   │   ├── 📁 domain
+│   │   ├── 📁 infra
+│   │   └── 📁 interface
+│   └── ...
+├── 📁 kakao-25
+│   ├── 📁 moheng
+│   │   ├── 📁 auth
+│   │   ├── 📁 planner
+│   │   ├── 📁 trip
+│   │   └── ...
+│   └── ...
 └── ...
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.12
-- Docker (if using Docker)
+- **Required environment setup**: Docker, Java (JDK 22), Python (3.11)
+- **Required dependencies**: 
+  - For Backend: Spring Boot, JPA, H2 Database, MySQL Connector, JWT
+  - For AI: FastAPI, Uvicorn, Poetry
+  - For Frontend: React, Vite, Axios
+- **Package manager**: 
+  - For Python: Poetry
+  - For Java: Gradle
+  - For JavaScript: npm
+- **Database system**: H2, MySQL
+- **Version control system**: Git
+- **Others**: Docker for containerization, Jenkins for CI/CD
 
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/42kko/42.git
+git clone https://github.com/kakao-25/moheng.git
+cd moheng-develop
 
-# Install required packages
-pip install --no-cache-dir -r requirements.txt
+# Install required packages for Backend
+cd backend
+./gradlew build
 
-# Configure environment
-# (No specific configuration commands provided)
+# Install required packages for AI
+cd ../ai
+pip install poetry
+poetry install
+
+# Install required packages for Frontend
+cd ../frontend
+npm install
 ```
 
 ### Usage
 ```bash
-# How to run
-# If using Docker
-docker build -t myapp .
-docker run -p 8000:8000 myapp
+# Run the Backend
+cd backend
+./gradlew bootRun
 
-# If running directly
-uvicorn ktb_server:app --host 0.0.0.0 --port 8000 --log-level debug --timeout-keep-alive 180
+# Run the AI service
+cd ../ai
+poetry run python main.py
+
+# Run the Frontend
+cd ../frontend
+npm start
 ```

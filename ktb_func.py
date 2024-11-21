@@ -3,96 +3,58 @@ from ktb_func import *
 
 import re
 import os
-from typing import List, Dict, Optional, Tuple, Any, Generator
-from pathlib import Path
-import git
 from urllib.parse import urlparse
 import zipfile
+import logging
+import shutil
+import boto3
+import asyncio
 
+
+logger = logging.getLogger(__name__)
 """**FUNCTIONS**"""
-def clone_git_repo(repo_url: str, clone_dir: str) -> bool:
-    """Git 저장소를 클론하거나 갱신합니다."""
-    try:
-        if os.path.exists(clone_dir):
-            repo = git.Repo(clone_dir)
-            repo.remotes.origin.pull()
-        else:
-            git.Repo.clone_from(repo_url, clone_dir, recursive=True)
-        return True
-    except Exception as e:
-        print(f"Git 작업 중 오류 발생: {str(e)}")
-        return False
+def check_service_annotation(java_files, include_tests=INCLUDE_TEST):
+    """
+    Java 파일들을 어노테이션 타입별로 분류하여 딕셔너리로 반환
+    """
+    classified_files = {
+        'Service': [],
+        'Controller': [],
+        'Test': []
+    }
+    
+    # 각 어노테이션별 패턴
+    patterns = {
+        'Service': re.compile(r'@Service\b'),
+        'Controller': re.compile(r'@(?:Controller|RestController)\b'), 
+        'Test': re.compile(r'@Test\b')
+    }
 
-def extract_imported_classes(content):
-    # Regex to find import statements
-    import_pattern = r'import\s+([\w\.]+);'
-    matches = re.findall(import_pattern, content)
-    return matches
-
-def read_file_content(file_path):
-    with open(file_path, 'r') as file:
-        return file.read()
-
-def file_list(path):
-    # List to store the paths of Java files
-    java_files = []
-    for root, dirs, files in os.walk(path):
-        dirs[:] = [d for d in dirs if d not in exclude_dirs]
-        for file in files:
-            if file.endswith('.java'):
-                java_files.append(os.path.join(root, file))
-
-    print(f"Total Java files found: {len(java_files)}")
-    return java_files
-
-def check_service_annotation(java_files):
-    service_files = []
-    # 전체 내용에서 어노테이션을 찾는 정규 표현식
-    pattern = re.compile(r'@(?:Service|Controller|RestController)\b')
 
     for file in java_files:
         if os.path.isfile(file):
-            with open(file, 'r', encoding='utf-8') as f:
-                content = f.read()
-                # 전체 내용에서 어노테이션이 있는지 검사
-                if pattern.search(content):
-                    service_files.append(file)
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    # 각 어노테이션 타입 검사
+                    for annotation, pattern in patterns.items():
+                        if pattern.search(content):
+                            if annotation == 'Test' and not include_tests:
+                                continue
+                            classified_files[annotation].append(file)
+            except Exception as e:
+                logger.error(f"파일 읽기 오류 {file}: {str(e)}")
+                continue
 
-    print("Service/Controller num :", len(service_files))
-    return service_files
+    print(f"전체 파일 수: {len(java_files)}")
+    # 결과 로깅
+    for annotation, files in classified_files.items():
+        print(f"{annotation} 파일 수: {len(files)}")
+        
+    total_files = sum(len(files) for files in classified_files.values())
+    print(f"전체 어노테이션 파일 수: {total_files}")
 
-def get_path(file_path) :
-    index = file_path.find("/main/java/") + len("/main/java/")
-    result = file_path[:index]
-
-    return result
-
-def extract_filename(path):
-    return Path(path).name
-
-def get_code_extention(service_code_list):
-    service_code_contents = []
-    for service_code in service_code_list:
-        total_code = ''
-        path = get_path(service_code)
-        with open(service_code, 'r') as file:
-            content = file.read()
-
-        imported_classes = extract_imported_classes(content)
-
-        for class_name in imported_classes:
-            class_path = class_name.replace('.', '/') + '.java'
-            full_path = os.path.join(path, class_path)
-
-            if os.path.exists(full_path):
-                class_content = read_file_content(full_path)
-                total_code = total_code + f"Content of {class_name} :\n{class_content}\n\n"
-            else:
-                pass
-        total_code = total_code + f"Service code :\n{content}"
-        service_code_contents.append(total_code)
-
-    return service_code_contents
+    return classified_files
 
 def parse_repo_url(repo_url: str):
     # URL 파싱
@@ -104,18 +66,13 @@ def parse_repo_url(repo_url: str):
     if len(path_parts) != 2:
         raise ValueError(f"잘못된 레포지토리 URL: {repo_url}")
     
-    user, repo = path_parts
-    repo = repo.replace('.git', '')  # '.git' 제거
+    user_name, repo_name = path_parts
+    repo_name = repo_name.replace('.git', '')  # '.git' 제거
 
-    # clone_dir과 md_path 구성
-    clone_dir = f"./{user}/{repo}"
-    md_path = f"./{user}/{repo}/dododocs/"
-    repo_name = f"{user}-{repo}"
-
-    return clone_dir, md_path, repo_name
+    return repo_name, user_name
 
 
-def download_zip_from_s3(bucket_name, object_key, download_path):
+def download_zip_from_s3(BUCKET_NAME, object_key, download_path):
     """S3에서 ZIP 파일을 다운로드"""
     # 다운로드 경로의 디렉토리 부분 추출
     download_dir = os.path.dirname(download_path)
@@ -124,7 +81,7 @@ def download_zip_from_s3(bucket_name, object_key, download_path):
         os.makedirs(download_dir)
         print(f"디렉토리 생성됨: {download_dir}")
     
-    s3.download_file(bucket_name, object_key, download_path)
+    s3.download_file(BUCKET_NAME, object_key, download_path)
 
 def extract_zip(file_path, extract_to):
     """ZIP 파일의 압축 해제"""
@@ -139,35 +96,42 @@ def create_zip(directory, zip_path):
                 file_path = os.path.join(root, file)
                 zip_ref.write(file_path, os.path.relpath(file_path, directory))
 
-def upload_zip_to_s3(bucket_name, object_key, file_path):
-    """ZIP 파일을 S3에 업로드"""
-    s3.upload_file(file_path, bucket_name, object_key)
+async def cleanup(repo_zip: str, clone_dir: str, doc_zip: str):
+    """임시 파일 및 디렉토리 정리"""
+    try:
+        # repo_zip 파일 삭제
+        if repo_zip and os.path.exists(repo_zip):
+            os.remove(repo_zip)
+            print(f"Removed repo zip file: {repo_zip}")
 
-def get_presigned_url(bucket_name, object_key, expiration=3600):
-    """프리사인드 URL 생성"""
-    url = s3.generate_presigned_url(
-        ClientMethod='get_object',
-        Params={'Bucket': bucket_name, 'Key': object_key},
-        ExpiresIn=expiration  # URL의 유효 시간 (초 단위)
-    )
-    return url
+        # ZIP 파일 삭제
+        if doc_zip and os.path.exists(doc_zip):
+            os.remove(doc_zip)
+            print(f"Removed zip file: {doc_zip}")
 
-# 예시 사용법
-'''
-# 단계별 실행
-# 1. ZIP 파일 다운로드
-md_url ="https://haon-dododocs.s3.ap-northeast-2.amazonaws.com/README.md"
-download_zip_from_s3(bucket_name=bucket_name, object_key="README.md.zip", download_path="README.md.zip")
-download_zip_from_s3(bucket_name=bucket_name, object_key="README.md.zip", download_path="./re/README.md.zip")
-# 2. ZIP 파일 압축 해제
-extract_zip("README.md.zip", "./")
+        # 클론 디렉토리 삭제
+        if clone_dir and os.path.exists(clone_dir):
+            shutil.rmtree(clone_dir)
+            print(f"Removed clone directory: {clone_dir}")
 
-# 3. 처리 후 ZIP 파일 생성
-create_zip("./re", "./re.zip")
+    except Exception as e:
+        print(f"Cleanup failed: {str(e)}")
 
-# 4. ZIP 파일 업로드
-upload_zip_to_s3(bucket_name, "./README_test.md.zip", "./README_test.md.zip")
+async def upload_to_s3(bucket: str, file_path: str, key: str):
+    """S3에 파일 업로드"""
+    s3_client = boto3.client('s3')
+    try:
+        with open(file_path, 'rb') as file:
+            await asyncio.to_thread(
+                s3_client.upload_fileobj,
+                file,
+                bucket,
+                key
+            )
+    except Exception as e:
+        logger.error(f"S3 업로드 실패: {str(e)}")
+        raise Exception(f"S3 업로드 실패: {str(e)}")
 
-url = get_presigned_url(bucket_name, "README_test.md.zip")
-print("Download URL:", url)
-'''
+def remove_markdown_blocks(content):
+    content = content.replace("```markdown", "")
+    return content
