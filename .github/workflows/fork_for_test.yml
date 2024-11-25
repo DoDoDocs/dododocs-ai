@@ -35,4 +35,4 @@ jobs:
           git reset target/main # 타겟 레포지토리의 상태로 현재 브랜치를 동기화
           git add .
           git commit -m "Sync from source repository" || true # 커밋할 사항이 없을 경우 오류 무시
-          git push target develop:main -f # 강제 푸시
+          git push target main:main -f # 강제 푸시
