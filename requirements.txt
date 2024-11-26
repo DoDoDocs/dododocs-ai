@@ -15,3 +15,6 @@ pillow
 requests
 python-dotenv
 gitpython
+google-generativeai
+chonkie
+autotiktokenizer
