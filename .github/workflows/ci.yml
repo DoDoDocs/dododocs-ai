@@ -17,6 +17,10 @@ jobs:
       run: |
         echo "${{ secrets.ENV_FILE }}" > .env
 
+    - name: Extract commit hash
+      id: vars
+      run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
     - name: DockerHub 로그인
       uses: docker/login-action@v2
       with:
@@ -25,12 +29,14 @@ jobs:
 
     - name: Docker 이미지 빌드 및 푸시
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:latest .
-        docker push ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:latest
+        echo "Using commit hash: ${{ env.COMMIT_HASH }}"
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }} .
+        docker push ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
 
     - name: 컨테이너 실행 및 테스트
       run: |
-        docker run -d -p 8000:8000 --env-file .env --rm ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:latest &
+        echo "Testing image with tag: ${{ env.COMMIT_HASH }}"
+        docker run -d -p 8000:8000 --env-file .env --rm ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }} &
         sleep 20  # 애플리케이션이 시작될 시간을 줍니다.
         # 기본 경로에서 서버 확인
         HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8000/)
