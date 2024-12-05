@@ -40,6 +40,7 @@ def get_embedding(texts: List[str], model: str = EMBEDDING_MODEL) -> List[float]
     try:
         # Clean texts by replacing newlines with spaces
         # cleaned_texts = [text.replace("\n", " ") for text in texts]
+        client_gpt = get_openai_client()
         response = client_gpt.embeddings.create(input=texts, model=model)
         return response.data[0].embedding
     except Exception as e:
@@ -219,6 +220,7 @@ User Query / Instruct: {query}
             full_prompt.extend(chat_history)
         full_prompt.append({"role": "user", "content": user_prompt})
         # Generate response using OpenAI
+        client_gpt = get_openai_client()
         response = client_gpt.chat.completions.create(
             model=GPT_MODEL,
             messages=full_prompt,
@@ -315,7 +317,7 @@ def query_augmentation(query: str, chat_history: Optional[List[dict]] = None) ->
         {"role": "user", "content": f"Previous Query: {
             previous_query}\nPrevious Response: {previous_response}\nQuery: {query}"}
     ]
-
+    client_gpt = get_openai_client()
     augmented_query = client_gpt.chat.completions.create(
         model=GPT_MODEL,
         messages=messages,

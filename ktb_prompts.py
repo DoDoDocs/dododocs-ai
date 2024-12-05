@@ -1444,3 +1444,237 @@ Please follow these steps to generate the optimized query:
 
 Output structure (purely for format, not content):  core keywords: specific technical problem description
 """
+
+# Modular README Blocks
+OVERVIEW_BLOCK = """
+## 📝 Overview
+[Brief overview of the project]
+- Main purpose of the project
+
+### Main Purpose
+- [Describe the primary goal and purpose of your project]
+- [Explain what problem it solves]
+- [Mention target users/audience]
+
+### Key Features
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+### Core Technology Stack
+-Skip sections if no relevant technology is used.
+-if you need to make sections, you can make sections like this:
+- Frontend: [e.g., React, Vue, Angular]
+- Backend: [e.g., Node.js, Python, Java]
+- Database: [e.g., PostgreSQL, MongoDB]
+- Others(AI, Model, etc.): [e.g., Python, Java]
+"""
+
+# ANALYSIS_BLOCK = """
+# ## 📊 Analysis
+# [Key analysis findings]
+# - Data analysis results
+# - Performance metrics
+# - Key insights
+# """
+
+STRUCTURE_BLOCK = """
+## 📁 Project Structure
+-don't have expose all files, expose important files/folders with Key Features 
+
+[project name]
+├── 📁 [folder1]
+│   ├── [folder/file]
+│   └── ...
+├── 📁 [folder2]
+│   ├── [folder/file]
+│   ├── [folder/file]
+│   └── ...
+└── ...
+"""
+
+# START_BLOCK = """
+# ## 🚀 Getting Started
+# ### Prerequisites
+# - Required environment setup
+# - Required dependencies
+
+# ### Installation
+# ```bash
+# # Clone the repository
+# git clone [repository URL]
+
+# # Install required packages
+# [installation commands]
+
+# # Configure environments
+# [configuration commands]
+# ```
+
+# ### Usage
+# bash
+# # How to run
+# [execution commands]
+# """
+START_BLOCK = """
+## 🚀 Getting Started
+### Prerequisites
+- Supported Operating Systems
+  * [List compatible OS: Windows, macOS, Linux]
+- Required Software
+  * [Runtime environment: Node.js, Python, Java, etc.]
+  * [Version requirements]
+  * [Package managers: npm, pip, etc.]
+- System Dependencies
+  * [Any system-level libraries or tools]
+
+### Installation
+- If you have Dockerfile, you can use it.
+- Include all installation methods in Dockerfiles
+- 
+```bash
+# Clone the repository
+git clone [repository-url]
+cd [project-name]
+
+# Install required packages
+[installation commands]
+-If your project has multiple components (e.g., frontend, backend, database, ai) :
+  * [Frontend Setup]
+  * [Backend Setup]
+  * [Database Setup]
+  * [AI/Services Setup]
+
+# Configure environments
+[configuration commands]
+```
+
+### Usage
+bash
+# How to run
+[execution commands]
+"""
+
+
+MOTIVATION_BLOCK = """
+## 💡 Motivation
+- What inspired this project?
+- What problem does it solve?
+- Personal or professional context
+"""
+
+DEMO_BLOCK = """
+## 🎬 Demo
+![Demo Video or Screenshot](path/to/demo.mp4)
+"""
+
+DEPLOYMENT_BLOCK = """
+## 🌐 Deployment
+- Deployment platforms (Heroku, AWS, etc.)
+- Deployment steps
+- Environment-specific configurations
+"""
+
+CONTRIBUTORS_BLOCK = """
+## 🤝 Contributing
+- How to contribute
+- Coding standards
+- Pull request process
+- Code of conduct
+"""
+
+FAQ_BLOCK = """
+## ❓ Troubleshooting & FAQ
+- Common issues
+- Frequently asked questions
+- Debugging tips
+"""
+
+PERFORMANCE_BLOCK = """
+## 📈 Performance
+- Benchmarks
+- Optimization techniques
+- Scalability considerations
+"""
+
+
+# 블록들 정의
+README_BLOCKS = {
+    "OVERVIEW_BLOCK": OVERVIEW_BLOCK,
+    # "ANALYSIS_BLOCK": ANALYSIS_BLOCK,
+    "STRUCTURE_BLOCK": STRUCTURE_BLOCK,
+    "START_BLOCK": START_BLOCK,
+    "MOTIVATION_BLOCK": MOTIVATION_BLOCK,
+    "DEMO_BLOCK": DEMO_BLOCK,
+    "DEPLOYMENT_BLOCK": DEPLOYMENT_BLOCK,
+    "CONTRIBUTORS_BLOCK": CONTRIBUTORS_BLOCK,
+    "FAQ_BLOCK": FAQ_BLOCK,
+    "PERFORMANCE_BLOCK": PERFORMANCE_BLOCK,
+}
+
+
+def generate_ordered_readme_template(ordered_blocks):
+    """
+    Generate a README template based on the input order of selected blocks.
+
+    Parameters:
+    - project_name (str): The name of the project.
+    - ordered_blocks (list): List of tuples (block_name, block_content) in the desired order.
+
+    Returns:
+    - str: The formatted README template.
+    """
+
+    table_of_contents = []
+    readme_content = f"# Project Name\n\n"
+
+    # Table of Contents header
+    readme_content += "## Table of Contents\n\n"
+
+    # Process blocks in input order
+    for block_name in ordered_blocks:
+        block_content = README_BLOCKS[block_name]
+        section_title = block_content.split("\n")[1].strip("# ").strip()
+        anchor_link = section_title.lower().replace(" ", "-")
+        table_of_contents.append(f"[ {section_title}](#{anchor_link})")
+        readme_content += block_content + "\n"
+
+    # Add Table of Contents
+    readme_content = (
+        readme_content.replace("## Table of Contents\n\n",
+                               "## Table of Contents\n\n" + "\n".join(table_of_contents) + "\n\n")
+    )
+    return readme_content
+
+
+def generate_readme_prompt(blocks, korean=False):
+    readme_template = generate_ordered_readme_template(blocks)
+    template = f"""Please analyze the entire repository structure and generate a README.md in the following format:
+
+{readme_template}
+"""
+    if korean:
+        template += "\nMUST reponse all readme and annotations in Korean. except for the code and Project Name."
+    else:
+        template += "\nMUST reponse all readme and annotations in English."
+    return template
+
+
+# # 선택된 블록
+blocks = [
+    "OVERVIEW_BLOCK",
+    # "ANALYSIS_BLOCK",
+    "STRUCTURE_BLOCK",
+    "START_BLOCK",
+    "MOTIVATION_BLOCK",
+    "DEMO_BLOCK",
+    "DEPLOYMENT_BLOCK",
+    "CONTRIBUTORS_BLOCK",
+    "FAQ_BLOCK",
+    "PERFORMANCE_BLOCK"]
+
+
+# readme_template = generate_readme_prompt(blocks, korean=False)
+
+# # 결과 출력
+# print(readme_template)

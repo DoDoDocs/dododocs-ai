@@ -23,10 +23,10 @@ class ChatClient:
         self.base_url = base_url or os.getenv(
             "API_BASE_URL", "http://localhost:8000").rstrip('/')
 
-    def generate(self, repo_url: str, s3_path: str, include_test: bool, korean: bool) -> Dict[str, Any]:
+    def generate(self, repo_url: str, s3_path: str, include_test: bool = False, korean: bool = False) -> Dict[str, Any]:
         """문서 및 README 생성 API 요청"""
         try:
-            url = f"{self.base_url}/generate"
+            url = f"{self.base_url}/generate_develop"
             payload = {
                 "repo_url": repo_url,
                 "s3_path": s3_path,
@@ -86,24 +86,25 @@ async def main():
     # s3_path = "spring-boot-main.zip"
     # s3_path = "msung99-Gatsby-Starter-Haon"
     s3_path = "moheng-develop.zip"
+    # blocks = ["PREVIEW_BLOCK", "OVERVIEW_BLOCK", "STRUCTURE_BLOCK"]
 
     try:
         # 문서 및 README 생성 테스트
-        # print("\n문서 및 README 생성 테스트:")
-        # generate_response = client.generate(
-        #     repo_url=repo_url, s3_path=s3_path, include_test=False, korean=True)
-        # pprint.pprint(generate_response)
+        print("\n문서 및 README 생성 테스트:")
+        generate_response = client.generate(
+            repo_url=repo_url, s3_path=s3_path, korean=True)
+        pprint.pprint(generate_response)
 
         # 첫 번째 질문
-        query = "describe AuthController and its response/endpoint"
-        print(f"\n질문: {query}\n")
-        print("응답:")
-        full_response = ''
+        # query = "describe AuthController and its response/endpoint"
+        # print(f"\n질문: {query}\n")
+        # print("응답:")
+        # full_response = ''
 
         # 스트리밍 응답 처리
-        for response_chunk in client.chat(repo_name=repo_url, query=query):
-            print(response_chunk, end='', flush=True)
-            full_response += response_chunk
+        # for response_chunk in client.chat(repo_name=repo_url, query=query):
+        #     print(response_chunk, end='', flush=True)
+        #     full_response += response_chunk
 
         # query2 = "씨팔 모르겠고 404에러나 고쳐줘. 어디부터 고쳐야됨?"
         # # query2 = "한국어로 다시 응답해줘"
