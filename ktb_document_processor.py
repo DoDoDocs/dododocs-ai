@@ -308,7 +308,7 @@ class DocumentProcessor:
 
                 # 일반 빌드 파일 체크
                 if file.endswith(tuple(BUILD_FILE_NAMES)) or any(name in file for name in BUILD_FILE_NAMES):
-                    print(f"빌드 파일 발견: {file}")
+                    # print(f"빌드 파일 발견: {file}")
                     build_files.append(file_path)
 
         if not build_files:
@@ -352,7 +352,7 @@ class DocumentProcessor:
             return None
 
         start_time = time.perf_counter()
-        messages = [{"role": "system", "content": PROMPT_README_FROM_SUMMARY}]
+        messages = [{"role": "system", "content": prompt}]
         for summary in chunk_summaries:
             messages.append({"role": "user", "content": summary})
         if korean:
@@ -631,24 +631,15 @@ class DocumentProcessor:
         try:
             io_pool = ThreadPoolExecutor(
                 max_workers=multiprocessing.cpu_count() * 2)
-
-            # 카테고리별 프롬프트 정의
-            if korean:
-                prompts = {
-                    'Controller': NEW_PROMPT_ARCHITECTURE_DOC,
-                    'Test': NEW_PROMPT_TEST_DOC
-                }
-            else:
-                prompts = {
-                    'Service': NEW_PROMPT_SERVICE_DOC,
-                    'Controller': NEW_PROMPT_CONTROLLER_DOC,
-                    'Test': NEW_PROMPT_TEST_DOC
-                }
-
+            # 한국어/영어에 따른 프롬프트 정의
+            prompts = {
+                'Controller': NEW_PROMPT_ARCHITECTURE_DOC_KOREAN if korean else NEW_PROMPT_ARCHITECTURE_DOC,
+                'Test': NEW_PROMPT_TEST_DOC_KOREAN if korean else NEW_PROMPT_TEST_DOC
+            }
             all_tasks = []
             for category, files in directory_path.items():
-                # Service 카테고리를 건너뛰기
-                if korean and category == 'Service':
+                # Controller와 Test 카테고리만 처리
+                if category not in prompts:
                     continue
 
                 code_contents = self._get_code_contents(files)
@@ -687,7 +678,6 @@ class DocumentProcessor:
     def categorize_files(self, directory):
         """각 카테고리 폴더(Service, Controller, Test) 내의 파일들을 분류"""
         categories = {
-            "Service": [],
             "Controller": [],  # Controller와 RestController를 함께 처리,
             "Test": []
         }
@@ -704,7 +694,7 @@ class DocumentProcessor:
 
     async def summarize_docs_async(self, directory, korean: bool):
         category_files = self.categorize_files(directory)
-        summaries = {"Service": {}, "Controller": {}, "Test": {}}
+        summaries = {"Controller": {}, "Test": {}}
 
         with ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()

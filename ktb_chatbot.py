@@ -26,28 +26,6 @@ def search_file(repo_path, filename):
     return None  # 파일이 없으면 None 반환
 
 
-def get_embedding(texts: List[str], model: str = EMBEDDING_MODEL) -> List[float]:
-    """
-    Get embeddings for a list of texts using OpenAI's embedding model.
-
-    Args:
-        texts (List[str]): List of texts to embed
-        model (str): Name of the embedding model to use
-
-    Returns:
-        List[float]: The embedding vector
-    """
-    try:
-        # Clean texts by replacing newlines with spaces
-        # cleaned_texts = [text.replace("\n", " ") for text in texts]
-        client_gpt = get_openai_client()
-        response = client_gpt.embeddings.create(input=texts, model=model)
-        return response.data[0].embedding
-    except Exception as e:
-        logger.error(f"Error generating embedding: {str(e)}")
-        raise
-
-
 async def process_file(file_path: Path, vector_store, file_metadata, chunk_id_counter: int) -> int:
     """파일을 처리하고 벡터 스토어에 추가"""
     try:

@@ -67,7 +67,15 @@ elif embedding_model_name == "text-embedding-3-large":
     EMBEDDING_MODEL = "text-embedding-3-large"
     EMBEDDING_DIM = 3072
 
-DISTANCE = {"hnsw:space": "cosine"}
+DISTANCE_TYPE = "inner_product"
+
+if DISTANCE_TYPE == "cosine":
+    DISTANCE = {"hnsw:space": "cosine"}
+elif DISTANCE_TYPE == "inner_product":
+    DISTANCE = {"hnsw:space": "ip"}
+else:
+    DISTANCE = {"hnsw:space": "l2"}
+
 GPT_MAX_TOKENS = 120000
 headers_to_split_on = [
     (

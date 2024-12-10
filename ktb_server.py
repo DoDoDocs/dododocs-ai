@@ -57,7 +57,8 @@ class DocRequest(BaseModel):
         "DEPLOYMENT_BLOCK",
         "CONTRIBUTORS_BLOCK",
         "FAQ_BLOCK",
-        "PERFORMANCE_BLOCK"]
+        "PERFORMANCE_BLOCK"
+    ]
 
 
 class ChatRequest(BaseModel):
@@ -205,7 +206,7 @@ async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     # generated_files_dir = os.path.join(clone_dir, "dododocs")  # 생성된 파일이 저장된 디렉토리
     # await add_data_to_db(db_name, clone_dir, [".md"])  # 생성된 파일 저장
     print(f"add_data_to_db 완료: {db_name}, {clone_dir}")
-    await async_cleanup(*cleanup_args)  # cleanup 실행
+    # await async_cleanup(*cleanup_args)  # cleanup 실행
 
 
 @app.post("/generate")
@@ -246,9 +247,8 @@ async def generate(request: DocRequest, background_tasks: BackgroundTasks):
 
             # 소스 파일들을 DB에 저장하는 작업 추가 (비동기)
             # BUILD_FILE_NAMES와 SRC_FILE_NAMES를 합치고 '.md'를 제외한 리스트 생성
-            file_types = [ft for ft in BUILD_FILE_NAMES +
-                          SRC_FILE_NAMES if ft != '.md']
-
+            file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
+            print(f"total files : {len(file_types)}")
             source_db_task = asyncio.create_task(
                 add_data_to_db(f"{repo_name}_source",
                                clone_dir, file_types)  # 소스 파일 저장

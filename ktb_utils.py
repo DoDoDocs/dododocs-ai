@@ -54,29 +54,6 @@ class TextProcessor:
         return chunker.chunk(text)
 
 
-class AsyncFileIO:
-    """비동기 파일 입출력 처리"""
-
-    def __init__(self):
-        self.io_pool = ThreadPoolExecutor(
-            max_workers=multiprocessing.cpu_count() * 2
-        )
-
-    async def save_file(self, path: str, content: str):
-        """비동기로 파일 저장"""
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            self.io_pool,
-            lambda: open(path, "w", encoding="utf-8").write(content)
-        )
-
-    async def read_file(self, path: str) -> str:
-        """비동기로 파일 읽기"""
-        async with aiofiles.open(path, "r", encoding="utf-8") as f:
-            return await f.read()
-
-
 class ImageProcessor:
     """이미지 생성 및 README 업데이트 관련 유틸리티"""
 
