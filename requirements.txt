@@ -1,6 +1,7 @@
 openai
 chromadb
 boto3
+numpy
 aiohttp
 asyncio
 fastapi
@@ -13,4 +14,4 @@ python-dotenv
 google-generativeai
 chonkie
 aws-lambda-powertools
-numpy
+autotiktokenizer
