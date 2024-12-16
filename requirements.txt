@@ -1,7 +1,6 @@
 openai
 chromadb
 boto3
-numpy
 aiohttp
 asyncio
 fastapi
@@ -9,9 +8,9 @@ uvicorn
 pydantic
 aiofiles
 tiktoken
-pillow
 requests
 python-dotenv
 google-generativeai
 chonkie
-autotiktokenizer
+aws-lambda-powertools
+numpy
