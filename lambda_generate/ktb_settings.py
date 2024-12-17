@@ -25,6 +25,8 @@ elif MODEL.startswith('gemini'):
     MAX_TOKENS_PER_BATCH = 3500000
     MAX_TOKEN_LENGTH = 1000000
 
+os.environ['HF_HOME'] = '/tmp/huggingface'
+
 tokenizer = AutoTikTokenizer.from_pretrained("gpt2")
 chunker = TokenChunker(
     tokenizer=tokenizer,
@@ -36,6 +38,7 @@ embedding_chunker = TokenChunker(
     chunk_size=8191,  # maximum tokens per chunk
     chunk_overlap=2000  # overlap between chunks
 )
+
 embedding_model_name = os.getenv(
     'EMBEDDING_MODEL_NAME', 'text-embedding-3-small')
 # 임베딩 모델과 차원 설정
