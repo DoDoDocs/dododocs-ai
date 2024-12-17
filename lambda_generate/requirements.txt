@@ -3,7 +3,6 @@ chromadb
 boto3
 numpy
 aiohttp
-asyncio
 pydantic
 aiofiles
 tiktoken
