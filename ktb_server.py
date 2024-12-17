@@ -104,15 +104,16 @@ async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str
         repo_path = os.path.join(current_directory, f"{repo_name}.zip")
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
         # S3에서 다운로드 및 압축 해제
+        print("1")
         download_zip_from_s3(BUCKET_NAME, s3_path, repo_path)
         while not os.path.exists(repo_path):
             await asyncio.sleep(0.1)
-
+        print("2")
         # 압축 해제 및 완료 확인
         extract_zip(repo_path, clone_dir)
         while not os.path.exists(clone_dir) or not os.listdir(clone_dir):
             await asyncio.sleep(0.1)
-
+        print("3")
         print(f"Repository extraction completed: {clone_dir}")
 
         return repo_path, clone_dir, repo_name, user_name

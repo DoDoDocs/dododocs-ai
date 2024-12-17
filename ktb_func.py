@@ -58,7 +58,7 @@ def parse_repo_url(repo_url):
     # Example implementation, adjust based on actual URL structure
     parts = repo_url.rstrip('/').split('/')
     user_name = parts[-3]
-    repo_with_branch = parts[-2]+'/'+parts[-1]
+    repo_with_branch = parts[-2]+'_'+parts[-1]
     return user_name, repo_with_branch
 
 
@@ -120,6 +120,8 @@ async def async_cleanup(repo_zip: str, clone_dir: str, doc_zip: str):
 async def upload_to_s3(bucket: str, file_path: str, key: str):
     """S3에 파일 업로드"""
     try:
+        print("upload_to_s3 호출")
+        print(file_path)
         with open(file_path, 'rb') as file:
             await asyncio.to_thread(
                 s3.upload_fileobj,
@@ -127,7 +129,9 @@ async def upload_to_s3(bucket: str, file_path: str, key: str):
                 bucket,
                 key
             )
+        print("upload_to_s3 완료")
     except Exception as e:
+        print("upload_to_s3 예외 발생")
         logger.error(f"S3 업로드 실패: {str(e)}")
         raise Exception(f"S3 업로드 실패: {str(e)}")
 

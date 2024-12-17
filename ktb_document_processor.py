@@ -212,6 +212,7 @@ class DocumentProcessor:
             print(f"results length: {len(results)}")
             # README와 Usage 병합
             if len(results) > 1 and isinstance(results[0], str) and isinstance(results[1], str):
+                print("README와 Usage 둘 다 있음")
                 merged_content = self._update_readme_with_usage(
                     results[0], results[1])
                 await self._save_readme(merged_content, clone_dir, user_name, repo_name)
@@ -587,6 +588,9 @@ class DocumentProcessor:
             async with aiofiles.open(readme_path, "w", encoding="utf-8") as f:
                 await f.write(remove_markdown_blocks(content))
             print(f"README가 저장되었습니다: {readme_path}")
+            print(user_name)
+            print(repo_name)
+            print(f"{user_name}_{repo_name}_README.md 업로드")
             await upload_to_s3(BUCKET_NAME, readme_path, f"{user_name}_{repo_name}_README.md")
         except Exception as e:
             logger.error(f"README 저장 중 오류: {str(e)}")
