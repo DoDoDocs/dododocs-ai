@@ -14,22 +14,23 @@
 
 ## 📝 Overview
 이 프로젝트는 Gatsby를 사용하여 기술 블로그 테마를 구현한 것입니다.  
-- 블로그 포스트를 작성하고 관리할 수 있는 기능을 제공합니다.
+- 이 프로젝트의 주요 목적은 사용자에게 기술 관련 콘텐츠를 제공하는 것입니다.
 
 ### Main Purpose
-- 이 프로젝트의 주요 목표는 사용자가 쉽게 블로그를 작성하고 관리할 수 있도록 하는 것입니다.
-- 기술 블로그를 운영하고자 하는 사용자에게 적합합니다.
+- 기술 블로그를 위한 테마를 제공하여 사용자가 쉽게 콘텐츠를 작성하고 공유할 수 있도록 합니다.
+- 블로그 포스트를 관리하고, 태그 및 시리즈 기능을 통해 콘텐츠를 분류할 수 있습니다.
+- 개발자 및 기술 블로거를 주요 대상으로 합니다.
 
 ### Key Features
 - 서버 사이드 렌더링(SSR) 지원
-- RSS 피드 생성
-- 다양한 플러그인 지원 (예: KaTeX, PrismJS)
+- Markdown 기반의 블로그 포스트 작성
+- 태그 및 시리즈 기능
+- Google Analytics 통합
 
 ### Core Technology Stack
 - Frontend: Gatsby
-- Backend: 없음 (정적 사이트 생성)
+- Backend: Node.js
 - Database: 없음 (Markdown 파일 사용)
-- Others: KaTeX, PrismJS
 
 ## 📁 Project Structure
 [Gatsby-Starter-Haon]
@@ -42,74 +43,66 @@
 │   │   ├── 📁 posts
 │   │   └── ...
 │   └── ...
-├── gatsby-config.js
-├── gatsby-ssr.js
-└── gatsby-browser.js
+├── 📁 static
+│   ├── profile.png
+│   └── ...
+└── gatsby-config.js
 
 ## 🚀 Getting Started
-
 ### Prerequisites
-- Supported Operating Systems
+- 지원되는 운영 체제
   * Windows, macOS, Linux
-- Required Software
-  * Runtime environment: Node.js
-  * Version requirements: Node.js 최신 버전
-  * Package managers: npm
-- System Dependencies
+- 필요한 소프트웨어
+  * Node.js (14.x 이상)
+  * npm (6.x 이상)
+- 시스템 종속성
   * 없음
 
 ### Installation
 ```bash
-# Clone the repository
+# 레포지토리 클론
 git clone [repository-url]
-cd Gatsby-Starter-Haon-main
+cd Gatsby-Starter-Haon
 
-# Install required packages
+# 필요한 패키지 설치
 npm install
 
-# Configure environments
-# 환경 설정은 meta-config.js 파일을 통해 가능합니다.
+# 환경 설정
+# .env 파일을 생성하고 필요한 환경 변수를 설정합니다.
 ```
 
 ### Usage
 ```bash
-# How to run
-gatsby develop
-# 또는
-npm start
-
+# 개발 서버 실행
+npm run develop
+```
 
 ## 💡 Motivation
-- 이 프로젝트는 개인 블로그를 운영하고자 하는 욕구에서 시작되었습니다.
-- 기술 블로그를 통해 지식을 공유하고, 다른 개발자들과 소통하고자 합니다.
+- 이 프로젝트는 개인 블로그를 만들기 위해 영감을 받았습니다.
+- 기술 블로그를 통해 지식을 공유하고, 다른 개발자들과 소통할 수 있는 플랫폼을 제공하고자 했습니다.
 
 ## 🎬 Demo
 ![Demo Video or Screenshot](path/to/demo.mp4)
 
 ## 🌐 Deployment
-- Netlify를 사용하여 배포할 수 있습니다.
-- 배포 단계는 다음과 같습니다:
+- Netlify를 사용하여 배포
+- 배포 단계:
   1. Netlify 계정 생성
   2. GitHub 레포지토리와 연결
   3. 배포 설정 완료 후 자동 배포
 
 ## 🤝 Contributing
-- 기여 방법은 GitHub에서 이슈를 생성하거나 Pull Request를 통해 가능합니다.
-- 코드 표준은 ESLint를 사용하여 유지합니다.
-- Pull Request 프로세스는 다음과 같습니다:
-  1. 포크 후 브랜치 생성
-  2. 변경 사항 커밋
-  3. Pull Request 제출
+- 기여 방법: 이슈를 생성하거나 Pull Request를 통해 기여할 수 있습니다.
+- 코딩 표준: ESLint 및 Prettier를 사용하여 코드 스타일을 유지합니다.
+- Pull Request 프로세스: 변경 사항을 설명하는 이슈를 생성한 후 Pull Request를 제출합니다.
+- 행동 강령: 모든 기여자는 존중과 배려의 원칙을 따라야 합니다.
 
 ## ❓ Troubleshooting & FAQ
-- 일반적인 문제:
-  * 개발 서버가 시작되지 않음: Node.js와 npm이 올바르게 설치되었는지 확인하세요.
-- 자주 묻는 질문:
-  * Markdown 파일은 어디에 저장되나요? → `src/contents/posts` 폴더에 저장됩니다.
-- 디버깅 팁:
-  * 콘솔에서 오류 메시지를 확인하고, 관련 문서를 참조하세요.
+- 일반적인 문제: 개발 서버가 시작되지 않는 경우, Node.js 및 npm 버전을 확인하세요.
+- 자주 묻는 질문: Markdown 파일의 형식에 대한 질문은 문서에서 확인할 수 있습니다.
+- 디버깅 팁: 콘솔 로그를 사용하여 문제를 추적하세요.
 
 ## 📈 Performance
-- 성능 벤치마크는 필요에 따라 추가할 수 있습니다.
-- 최적화 기법으로는 이미지 최적화 및 코드 스플리팅을 사용할 수 있습니다.
-- 확장성 고려 사항으로는 Gatsby의 정적 사이트 생성 기능을 활용하여 트래픽 증가에 대응할 수 있습니다.
+- 벤치마크: 페이지 로딩 시간 및 SSR 성능을 측정합니다.
+- 최적화 기술: 이미지 최적화 및 코드 스플리팅을 통해 성능을 향상시킵니다.
+- 확장성 고려사항: Gatsby의 플러그인을 활용하여 기능을 확장할 수 있습니다.
