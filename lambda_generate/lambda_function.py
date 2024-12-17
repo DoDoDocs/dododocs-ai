@@ -5,7 +5,7 @@ import os
 from typing import Tuple
 
 from ktb_document_processor import DocumentProcessor
-from lambda_generate.ktb_api_client import APIClient
+from ktb_api_client import APIClient
 from ktb_utils import FileUtils, ImageProcessor
 from ktb_settings import *
 from ktb_chatbot import *

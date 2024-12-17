@@ -12,7 +12,7 @@ import time
 import aiofiles
 
 from ktb_utils import TextProcessor
-from lambda_generate.ktb_api_client import APIClient
+from ktb_api_client import APIClient
 from ktb_prompts import *
 from ktb_settings import *
 from ktb_func import *
