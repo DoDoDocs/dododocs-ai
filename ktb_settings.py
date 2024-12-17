@@ -43,7 +43,7 @@ else:
 IS_DOCKER = os.getenv('IS_DOCKER', 'false').lower() == 'true'
 
 
-CHROMA_PATH = "/app/chroma_data"
+CHROMA_PATH = "/mnt/chroma_DB"
 
 
 # ChromaDB 클라이언트 초기화
