@@ -91,7 +91,7 @@ async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
         repo_name, user_name = parse_repo_url(repo_url)
-        current_directory = os.getcwd()
+        current_directory = '/tmp'
         repo_path = os.path.join(current_directory, f"{repo_name}.zip")
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
 

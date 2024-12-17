@@ -123,8 +123,6 @@ client_gemini = OpenAI(
 )
 
 CHROMA_PATH = "/mnt/chroma_DB"
-if not os.path.exists(CHROMA_PATH):
-    os.makedirs(CHROMA_PATH)
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 embedding_function = OpenAIEmbeddingFunction(
