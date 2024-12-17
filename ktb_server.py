@@ -204,7 +204,7 @@ async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     # generated_files_dir = os.path.join(clone_dir, "dododocs")  # 생성된 파일이 저장된 디렉토리
     # await add_data_to_db(db_name, clone_dir, [".md"])  # 생성된 파일 저장
     print(f"add_data_to_db 완료: {db_name}, {clone_dir}")
-    # await async_cleanup(*cleanup_args)  # cleanup 실행
+    await async_cleanup(*cleanup_args)  # cleanup 실행
 
 
 @app.post("/generate")
