@@ -1,13 +1,10 @@
 import json
 import boto3
-import os
 from pydantic import BaseModel
 from typing import List
 
 # Boto3 클라이언트 생성
-lambda_client = boto3.client('lambda',
-                             region_name='ap-northeast-2'
-                             )
+lambda_client = boto3.client('lambda')
 
 
 class DocRequest(BaseModel):
@@ -39,8 +36,6 @@ def parse_repo_url(repo_url):
 
 def lambda_handler(event, context):
     # 호출할 Lambda 함수의 이름
-    target_lambda_name = os.getenv('TARGET_LAMBDA_NAME')
-
     # DocRequest 형식의 페이로드 생성, blocks는 기본값 사용
     payload = DocRequest(
         repo_url=event.get('repo_url', ''),
