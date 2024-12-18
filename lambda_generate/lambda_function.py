@@ -57,8 +57,8 @@ async def process_docs(directory_path: dict[str, list], output_directory: str, u
     try:
         await doc_processor.generate_docs(directory_path, output_directory, korean)
         await doc_processor.summarize_docs_async(output_directory, korean)
-        create_zip(output_directory, "Docs.zip")
-        await upload_to_s3(BUCKET_NAME, "Docs.zip", f"{user_name}_{repo_name}_DOCS.zip")
+        create_zip(output_directory, "/tmp/Docs.zip")
+        await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", f"{user_name}_{repo_name}_DOCS.zip")
         return True
     except Exception as doc_error:
         logger.error(f"문서 생성 중 오류 발생: {str(doc_error)}")
@@ -82,7 +82,13 @@ async def perform_readme_only_generation(repo_url, clone_dir, repo_name, user_na
 async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     """백그라운드 작업을 수행하고 완료되면 cleanup 실행"""
     await asyncio.gather(*tasks)
-    logger.info(f"add_data_to_db 완료: {db_name}, {clone_dir}")
+    collection_name = db_name
+    collection = chroma_client.get_collection(collection_name)
+
+    # 컬렉션에 저장된 항목 수 확인
+    document_count = collection.count_documents()
+    print(f"Number of documents in collection '{
+          collection_name}': {document_count}")
     await async_cleanup(*cleanup_args)
 
 
@@ -93,7 +99,8 @@ async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str
         current_directory = '/tmp'
         repo_path = os.path.join(current_directory, f"{repo_name}.zip")
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
-
+        print(f"repo_path: {repo_path}")
+        print(f"clone_dir: {clone_dir}")
         download_zip_from_s3(BUCKET_NAME, s3_path, repo_path)
         while not os.path.exists(repo_path):
             await asyncio.sleep(0.1)
@@ -161,7 +168,7 @@ async def generate(request):
             tasks.append(source_db_task)
 
             await perform_tasks_and_cleanup(tasks, (
-                repo_dir, clone_dir, "Docs.zip"), f"{repo_name}_generated", clone_dir)
+                repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir)
 
             return
 
