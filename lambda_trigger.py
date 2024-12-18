@@ -6,10 +6,7 @@ from typing import List
 
 # Boto3 클라이언트 생성
 lambda_client = boto3.client('lambda',
-                             region_name='ap-northeast-2',
-                             aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-                             aws_secret_access_key=os.getenv(
-                                 'AWS_SECRET_ACCESS_KEY')
+                             region_name='ap-northeast-2'
                              )
 
 
@@ -61,7 +58,7 @@ def lambda_handler(event, context):
         lambda_client.invoke(
             FunctionName="ai-generate",
             InvocationType='Event',  # 비동기 호출
-            Payload=json.dumps(payload.model_dump())
+            Payload=json.dumps({"body": json.dumps(payload.model_dump())})
         )
         response = {"readme_s3_key": readme_s3_key,
                     "docs_s3_key": docs_s3_key}
