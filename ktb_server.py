@@ -365,7 +365,10 @@ async def chat(request: ChatRequest):
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
-        return {"answer": f"Error: {str(error)}"}
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(error)}"
+        )
 
 
 async def test(task_name: str):
