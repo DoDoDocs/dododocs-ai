@@ -129,10 +129,6 @@ embedding_function = OpenAIEmbeddingFunction(
     api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
 
 # S3 클라이언트 생성
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-)
+s3 = boto3.client('s3')
 
 BUCKET_NAME = 'haon-dododocs'
