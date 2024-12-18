@@ -98,11 +98,11 @@ async def process_file(file_path: Path, vector_store, file_metadata, chunk_id_co
 async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
     """DB에 데이터를 추가"""
     try:
-        # db_list = chroma_client.list_collections()
-        # collection_names = [collection.name for collection in db_list]
-        # if db_name in collection_names:
-        #     chroma_client.delete_collection(db_name)
-        vector_store = chroma_client.get_or_create_collection(
+        db_list = chroma_client.list_collections()
+        collection_names = [collection.name for collection in db_list]
+        if db_name in collection_names:
+            chroma_client.delete_collection(db_name)
+        vector_store = chroma_client.create_collection(
             name=db_name,
             embedding_function=embedding_function,
             metadata=DISTANCE

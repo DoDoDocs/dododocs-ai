@@ -82,13 +82,6 @@ async def perform_readme_only_generation(repo_url, clone_dir, repo_name, user_na
 async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     """백그라운드 작업을 수행하고 완료되면 cleanup 실행"""
     await asyncio.gather(*tasks)
-    collection_name = db_name
-    collection = chroma_client.get_collection(collection_name)
-
-    # 컬렉션에 저장된 항목 수 확인
-    document_count = collection.count_documents()
-    print(f"Number of documents in collection '{
-          collection_name}': {document_count}")
     await async_cleanup(*cleanup_args)
 
 
