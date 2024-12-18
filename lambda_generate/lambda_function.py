@@ -6,7 +6,7 @@ from typing import Tuple
 
 from ktb_document_processor import DocumentProcessor
 from ktb_api_client import APIClient
-from ktb_utils import FileUtils, ImageProcessor
+from ktb_utils import FileUtils
 from ktb_settings import *
 from ktb_chatbot import *
 from ktb_func import *
@@ -18,7 +18,6 @@ logger.setLevel(logging.INFO)
 api_client = APIClient(os.getenv('OPENAI_API_KEY'))
 doc_processor = DocumentProcessor(api_client)
 file_utils = FileUtils()
-image_processor = ImageProcessor()
 
 
 async def perform_full_generation(repo_url, clone_dir, repo_name, user_name, include_test, korean, blocks):

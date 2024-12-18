@@ -1,14 +1,10 @@
-from typing import List, Optional
+from typing import List
 import os
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import tiktoken
 from token_chunker import *
 from ktb_settings import *
 
-
-from ktb_settings import get_openai_client
-from ktb_prompts import DALLE_PROMPT
 
 logger = logging.getLogger(__name__)
 

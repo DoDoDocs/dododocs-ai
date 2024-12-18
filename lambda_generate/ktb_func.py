@@ -2,7 +2,6 @@ from ktb_settings import *
 
 import re
 import os
-from urllib.parse import urlparse
 import zipfile
 import logging
 import shutil
