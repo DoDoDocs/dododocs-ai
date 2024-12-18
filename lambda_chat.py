@@ -52,12 +52,12 @@ def lambda_handler(event, context):
         else:
             return {
                 'statusCode': 200,
-                'body': json.dumps({'answer': response})
+                'body': json.dumps({'answer': response}, ensure_ascii=False)
             }
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
         return {
             'statusCode': 500,
-            'body': json.dumps({'answer': f"Error: {str(error)}"})
+            'body': json.dumps({'answer': f"Error: {str(error)}"}, ensure_ascii=False)
         }
