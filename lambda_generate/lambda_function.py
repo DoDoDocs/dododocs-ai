@@ -3,6 +3,7 @@ import logging
 import asyncio
 import os
 from typing import Tuple
+import boto3
 
 from ktb_document_processor import DocumentProcessor
 from ktb_api_client import APIClient
@@ -18,6 +19,8 @@ logger.setLevel(logging.INFO)
 api_client = APIClient(os.getenv('OPENAI_API_KEY'))
 doc_processor = DocumentProcessor(api_client)
 file_utils = FileUtils()
+
+s3 = boto3.client('s3')
 
 
 async def perform_full_generation(repo_url, clone_dir, repo_name, user_name, include_test, korean, blocks):
@@ -114,7 +117,35 @@ async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str
 def lambda_handler(event, context):
     """AWS Lambda 핸들러"""
     try:
-        request = json.loads(event['body'])
+        # S3 이벤트에서 정보 추출
+        bucket_name = event['Records'][0]['s3']['bucket']['name']
+        s3_key = event['Records'][0]['s3']['object']['key']
+
+        # S3 객체 메타데이터 가져오기
+        response = s3.head_object(Bucket=bucket_name, Key=s3_key)
+        metadata = response.get('Metadata', {})
+
+        # 메타데이터에서 필요한 값 추출
+        repo_url = metadata.get('repo_url')
+        s3_path = metadata.get('s3_path')
+        include_test = metadata.get('include_test', 'false').lower() == 'true'
+        korean = metadata.get('korean', 'false').lower() == 'true'
+        blocks = json.loads(metadata.get('blocks', '[]'))
+
+        if not repo_url or not s3_path:
+            logger.error("repo_url or s3_path not found in metadata")
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "repo_url or s3_path not found in metadata"})
+            }
+
+        request = {
+            'repo_url': repo_url,
+            's3_path': s3_path,
+            'include_test': include_test,
+            'korean': korean,
+            'blocks': blocks
+        }
         asyncio.run(generate(request))
         return {
             "statusCode": 200,
