@@ -76,20 +76,7 @@ else:
     DISTANCE = {"hnsw:space": "l2"}
 
 GPT_MAX_TOKENS = 120000
-headers_to_split_on = [
-    (
-        "#",
-        "Header 1",
-    ),
-    (
-        "##",
-        "Header 2",
-    ),
-    (
-        "###",
-        "Header 3",
-    )
-]
+
 FILE_EXTENSIONS = [
     '.py', '.pyw', '.pyc', '.pyo',  # Python
     '.java', '.class',     # Java
