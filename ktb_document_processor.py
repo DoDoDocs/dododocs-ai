@@ -234,7 +234,7 @@ class DocumentProcessor:
             '.js': 'js',
             '.ts': 'ts',
             '.cpp': 'cpp',
-            '.cs': 'cs',
+            '.cs': 'cs'
             # 필요한 확장자 추가
         }
 

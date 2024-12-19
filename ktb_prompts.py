@@ -640,14 +640,14 @@ def generate_ordered_readme_template(ordered_blocks):
 
 def generate_readme_prompt(blocks, korean=False):
     readme_template = generate_ordered_readme_template(blocks)
-    template = f"""Please analyze the entire repository structure and generate a README.md in the following format:
+    template = f"""Analyze the entire repository structure and fill the README.md in the following format:
 
 {readme_template}
 """
     if korean:
-        template += "Do not generate other contents. MUST fill only the sections that are provided.\nMUST reponse all readme and annotations in Korean. except for the code and Project Name."
+        template += "Do not generate other contents. MUST fill only the sections that are provided format.\nMUST reponse in Korean except for the code and Project Name."
     else:
-        template += "Do not generate other contents. MUST fill only the sections that are provided.\nMUST reponse all readme and annotations in English. except for the code and Project Name."
+        template += "Do not generate other contents. MUST fill only the sections that are provided format.\nMUST reponse in English except for the code and Project Name."
     return template
 
 
