@@ -559,7 +559,7 @@ class DocumentProcessor:
         """
         try:
             pattern_readme = r"(## 🚀 Getting Started.*)(## 💡 Motivation)"
-            pattern_usage = r"(## 🚀 Getting Started.*)(```)"
+            pattern_usage = r"(## 🚀 Getting Started.*)(## 💡 Motivation)"
 
             readme_getting_started = re.search(
                 pattern_readme, readme_content, re.DOTALL).group(1)
