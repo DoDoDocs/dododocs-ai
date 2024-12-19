@@ -88,7 +88,7 @@ async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     await async_cleanup(*cleanup_args)
 
 
-async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str, str]:
+async def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
         repo_name, user_name = parse_repo_url(repo_url)
@@ -97,7 +97,7 @@ async def prepare_repository(repo_url: str, s3_path: str) -> Tuple[str, str, str
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
         print(f"repo_path: {repo_path}")
         print(f"clone_dir: {clone_dir}")
-        download_zip_from_s3(BUCKET_NAME, s3_path, repo_path)
+        download_zip_from_s3(BUCKET_NAME, s3_key, repo_path)
         while not os.path.exists(repo_path):
             await asyncio.sleep(0.1)
 
@@ -124,27 +124,43 @@ def lambda_handler(event, context):
         # S3 객체 메타데이터 가져오기
         response = s3.head_object(Bucket=bucket_name, Key=s3_key)
         metadata = response.get('Metadata', {})
-
+        print(f"bucket_name: {bucket_name}")
+        print(f"s3_key: {s3_key}")
         # 메타데이터에서 필요한 값 추출
         repo_url = metadata.get('repo_url')
-        s3_path = metadata.get('s3_path')
+        readme_key = metadata.get('readme_key')
+        docs_key = metadata.get('docs_key')
         include_test = metadata.get('include_test', 'false').lower() == 'true'
         korean = metadata.get('korean', 'false').lower() == 'true'
-        blocks = json.loads(metadata.get('blocks', '[]'))
 
-        if not repo_url or not s3_path:
-            logger.error("repo_url or s3_path not found in metadata")
+        blocks = [
+            "OVERVIEW_BLOCK",
+            "STRUCTURE_BLOCK",
+            "START_BLOCK",
+            "MOTIVATION_BLOCK",
+            "DEMO_BLOCK",
+            "DEPLOYMENT_BLOCK",
+            "CONTRIBUTORS_BLOCK",
+            "FAQ_BLOCK",
+            "PERFORMANCE_BLOCK"
+        ]
+
+        if not repo_url or not readme_key or not docs_key:
+            logger.error(
+                "repo_url or readme_key or docs_key not found in metadata")
             return {
                 "statusCode": 400,
-                "body": json.dumps({"error": "repo_url or s3_path not found in metadata"})
+                "body": json.dumps({"error": "repo_url or readme_key or docs_key not found in metadata"})
             }
 
         request = {
             'repo_url': repo_url,
-            's3_path': s3_path,
+            'readme_key': readme_key,
+            'docs_key': docs_key,
             'include_test': include_test,
             'korean': korean,
-            'blocks': blocks
+            'blocks': blocks,
+            's3_key': s3_key
         }
         asyncio.run(generate(request))
         return {
@@ -166,7 +182,7 @@ async def generate(request):
         try:
             repo_dir, clone_dir, repo_name, user_name = await prepare_repository(
                 request['repo_url'],
-                request['s3_path']
+                request['s3_key']
             )
             java_files_path = file_utils.find_files(clone_dir, (".java",))
             has_java_files = len(java_files_path) > 0
