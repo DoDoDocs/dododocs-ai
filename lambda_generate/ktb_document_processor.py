@@ -558,16 +558,15 @@ class DocumentProcessor:
             str: 병합된 README 내용
         """
         try:
-            pattern_readme = r"(## 🚀 Getting Started.*)(## 💡 Motivation)"
-            pattern_usage = r"(## 🚀 Getting Started.*)(## 💡 Motivation)"
+            # 수정된 정규 표현식: Getting Started 섹션 시작부터 Motivation 섹션까지
+            pattern_readme = r"(## 🚀 Getting Started.*?)(?=## 💡 Motivation|$)"
+            pattern_usage = r"(## 🚀 Getting Started.*)"
 
-            readme_getting_started = re.search(
-                pattern_readme, readme_content, re.DOTALL).group(1)
-            usage_getting_started = re.search(
-                pattern_usage, usage_content, re.DOTALL).group(1) + "\n\n"
+            readme_match = re.search(pattern_readme, readme_content, re.DOTALL)
+            usage_match = re.search(pattern_usage, usage_content, re.DOTALL)
 
-            if not readme_getting_started or not usage_getting_started:
-                return readme_content
+            readme_getting_started = readme_match.group(0)
+            usage_getting_started = usage_match.group(0) + "\n\n"
 
             # Getting Started 섹션을 usage_content의 섹션으로 교체
             new_content = readme_content.replace(
@@ -576,6 +575,7 @@ class DocumentProcessor:
             return new_content
 
         except Exception as e:
+            logger.error(f"README 병합 중 오류: {str(e)}")
             return readme_content
 
     async def _save_readme(self, content: str, clone_dir: str, readme_key: str):
