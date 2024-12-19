@@ -23,7 +23,7 @@ file_utils = FileUtils()
 s3 = boto3.client('s3')
 
 
-async def perform_full_generation(repo_url, clone_dir, repo_name, user_name, include_test, korean, blocks):
+async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, docs_key, include_test, korean, blocks):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
@@ -32,13 +32,13 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, user_name, inc
 
         tasks = []
         readme_task = asyncio.create_task(doc_processor.process_readme(
-            repo_url, clone_dir, user_name, repo_name, korean, blocks))
+            repo_url, clone_dir, readme_key, korean, blocks))
         tasks.append(readme_task)
 
         doc_dir = os.path.join(clone_dir, "dododocs")
         if java_categories:
             docs_task = asyncio.create_task(process_docs(
-                java_categories, doc_dir, user_name, repo_name, korean))
+                java_categories, doc_dir, docs_key, korean))
             tasks.append(docs_task)
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -55,23 +55,23 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, user_name, inc
         logger.error(f"문서 및 README 생성 오류: {str(e)}")
 
 
-async def process_docs(directory_path: dict[str, list], output_directory: str, user_name: str, repo_name: str, korean: bool) -> bool:
+async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool) -> bool:
     """문서 생성 및 요약 처리"""
     try:
         await doc_processor.generate_docs(directory_path, output_directory, korean)
         await doc_processor.summarize_docs_async(output_directory, korean)
         create_zip(output_directory, "/tmp/Docs.zip")
-        await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", f"{user_name}_{repo_name}_DOCS.zip")
+        await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", docs_key)
         return True
     except Exception as doc_error:
         logger.error(f"문서 생성 중 오류 발생: {str(doc_error)}")
         return False
 
 
-async def perform_readme_only_generation(repo_url, clone_dir, repo_name, user_name, korean, blocks):
+async def perform_readme_only_generation(repo_url, clone_dir, repo_name, readme_key, korean, blocks):
     """README 생성 작업만 백그라운드에서 수행"""
     try:
-        readme = await doc_processor.process_readme(repo_url, clone_dir, user_name, repo_name, korean, blocks)
+        readme = await doc_processor.process_readme(repo_url, clone_dir, readme_key, repo_name, korean, blocks)
         if not readme:
             logger.error("README 생성 실패")
             raise Exception("README 생성 실패")
@@ -192,12 +192,12 @@ async def generate(request):
             if has_java_files:
                 tasks.append(asyncio.create_task(
                     perform_full_generation(
-                        request['repo_url'], clone_dir, repo_name, user_name, request['include_test'], request['korean'], request['blocks'])
+                        request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'])
                 ))
             else:
                 tasks.append(asyncio.create_task(
                     perform_readme_only_generation(
-                        repo_dir, clone_dir, repo_name, user_name, request['korean'], request['blocks'])
+                        request['repo_url'], clone_dir, repo_name, request['readme_key'], request['korean'], request['blocks'])
                 ))
 
             file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
