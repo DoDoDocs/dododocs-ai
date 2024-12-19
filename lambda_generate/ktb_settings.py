@@ -117,11 +117,6 @@ def get_gemini_client(prompt: str):
     )
 
 
-client_gemini = OpenAI(
-    api_key=os.getenv('GEMINI_API_KEY'),
-    base_url="https://generativelanguage.googleapis.com/v1beta/"
-)
-
 CHROMA_PATH = "/mnt/chroma_DB"
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
