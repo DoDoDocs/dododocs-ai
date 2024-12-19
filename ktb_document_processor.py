@@ -214,6 +214,8 @@ class DocumentProcessor:
             if len(results) > 1 and isinstance(results[0], str) and isinstance(results[1], str):
                 merged_content = self._update_readme_with_usage(
                     results[0], results[1])
+                print(f"results[0] : {results[0]}")
+                print(f"results[1] : {results[1]}")
                 await self._save_readme(merged_content, clone_dir, user_name, repo_name)
             elif isinstance(results[0], str):
                 await self._save_readme(results[0], clone_dir, user_name, repo_name)
