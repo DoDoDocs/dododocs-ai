@@ -189,16 +189,15 @@ async def generate(request):
             logger.info(f"has_java_files: {has_java_files}")
 
             tasks = []
-            if has_java_files:
-                tasks.append(asyncio.create_task(
-                    perform_full_generation(
-                        request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'])
-                ))
-            else:
-                tasks.append(asyncio.create_task(
-                    perform_readme_only_generation(
-                        request['repo_url'], clone_dir, repo_name, request['readme_key'], request['korean'], request['blocks'])
-                ))
+            tasks.append(asyncio.create_task(
+                perform_full_generation(
+                    request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'])
+            ))
+            # else:
+            #     tasks.append(asyncio.create_task(
+            #         perform_readme_only_generation(
+            #             request['repo_url'], clone_dir, repo_name, request['readme_key'], request['korean'], request['blocks'])
+            #     ))
 
             file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
             logger.info(f"total files : {len(file_types)}")

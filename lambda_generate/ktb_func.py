@@ -87,6 +87,10 @@ def extract_zip(file_path, extract_to):
 
 def create_zip(directory, zip_path):
     """디렉토리의 모든 파일을 ZIP으로 압축"""
+    if not os.path.exists(directory):
+        logger.warning(f"디렉토리 없음: {directory}. 빈 ZIP 파일 생성")
+        with zipfile.ZipFile(zip_path, 'w') as zip_ref:
+            return  # 빈 ZIP 파일 생성 후 함수 종료
     with zipfile.ZipFile(zip_path, 'w') as zip_ref:
         for root, dirs, files in os.walk(directory):
             for file in files:
