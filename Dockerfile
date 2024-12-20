@@ -20,7 +20,7 @@ COPY . .
 ENV IS_DOCKER=true
 
 # 포트 노출
-EXPOSE 8000
+EXPOSE 5001
 
 # 실행 명령어
 CMD ["python", "lambda_chat.py"]
