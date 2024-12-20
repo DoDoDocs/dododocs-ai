@@ -20,8 +20,7 @@ origins = [
     "http://localhost:3000"
 ]
 
-CORS(app, resources={r"/chat": {"origins": origins}},
-     supports_credentials=True)
+CORS(app, resources={r"/chat": {"origins": origins}}, supports_credentials=True)
 
 
 @app.route('/chat', methods=['POST'])
@@ -40,10 +39,8 @@ def chat():
         if chat_history:
             chat_history_list = []
             for item in chat_history:
-                chat_history_list.append(
-                    {"role": "user", "content": item["question"]})
-                chat_history_list.append(
-                    {"role": "assistant", "content": item["answer"]})
+                chat_history_list.append({"role": "user", "content": item["question"]})
+                chat_history_list.append({"role": "assistant", "content": item["answer"]})
             response = codebase_chat(
                 query,
                 repo_url,
@@ -59,13 +56,13 @@ def chat():
             )
 
         if stream:
-            def stream_response():
+            def stream_response_generator():
                 if isinstance(response, str):
                     yield f"data: {{\"message\": \"{response}\"}}\n\n".encode('utf-8')
                 else:
                     for chunk in response:
                         yield f"data: {{\"message\": \"{chunk}\"}}\n\n".encode('utf-8')
-            return Response(stream_with_context(stream_response()), content_type='text/event-stream')
+            return Response(stream_with_context(stream_response_generator), content_type='text/event-stream')
         else:
             return jsonify({'answer': response}), 200
 
