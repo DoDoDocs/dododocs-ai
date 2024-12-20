@@ -189,7 +189,7 @@ class DocumentProcessor:
             file_type=file_type
         )
 
-    async def process_readme(self, repo_url: str, clone_dir: str, readme_key: str, korean: bool, blocks: List[str]) -> List[Any]:
+    async def process_readme(self, repo_url: str, clone_dir: str, readme_key: str, korean: bool, blocks: List[str], metadata: dict = None) -> List[Any]:
         """모든 문서 처리 태스크 실행"""
         tasks = []
         start_time = time.perf_counter()
@@ -214,9 +214,9 @@ class DocumentProcessor:
             if len(results) > 1 and isinstance(results[0], str) and isinstance(results[1], str):
                 merged_content = self._update_readme_with_usage(
                     results[0], results[1])
-                await self._save_readme(merged_content, clone_dir, readme_key)
+                await self._save_readme(merged_content, clone_dir, readme_key, metadata)
             elif isinstance(results[0], str):
-                await self._save_readme(results[0], clone_dir, readme_key)
+                await self._save_readme(results[0], clone_dir, readme_key, metadata)
             end_time = time.perf_counter()
             print(f"README 및 Usage 생성 완료 처리 시간: {end_time - start_time} 초")
             return results
@@ -578,7 +578,7 @@ class DocumentProcessor:
             logger.error(f"README 병합 중 오류: {str(e)}")
             return readme_content
 
-    async def _save_readme(self, content: str, clone_dir: str, readme_key: str):
+    async def _save_readme(self, content: str, clone_dir: str, readme_key: str, metadata: dict = None):
         """README 파일 저장"""
         readme_path = os.path.join(clone_dir, "README.md")
 
@@ -586,7 +586,7 @@ class DocumentProcessor:
             async with aiofiles.open(readme_path, "w", encoding="utf-8") as f:
                 await f.write(remove_markdown_blocks(content))
             print(f"README가 저장되었습니다: {readme_path}")
-            await upload_to_s3(BUCKET_NAME, readme_path, readme_key)
+            await upload_to_s3(BUCKET_NAME, readme_path, "result/"+readme_key, metadata)
         except Exception as e:
             logger.error(f"README 저장 중 오류: {str(e)}")
 

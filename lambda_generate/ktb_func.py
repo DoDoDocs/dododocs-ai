@@ -120,15 +120,17 @@ async def async_cleanup(repo_zip: str, clone_dir: str, doc_zip: str):
         print(f"Cleanup failed: {str(e)}")
 
 
-async def upload_to_s3(bucket: str, file_path: str, key: str):
-    """S3에 파일 업로드"""
+async def upload_to_s3(bucket: str, file_path: str, key: str, metadata: dict = None):
+    """S3에 파일 업로드 (메타데이터 포함)"""
     try:
         with open(file_path, 'rb') as file:
+            extra_args = {'Metadata': metadata} if metadata else {}
             await asyncio.to_thread(
                 s3.upload_fileobj,
                 file,
                 bucket,
-                key
+                key,
+                ExtraArgs=extra_args
             )
     except Exception as e:
         logger.error(f"S3 업로드 실패: {str(e)}")

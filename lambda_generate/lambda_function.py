@@ -23,7 +23,7 @@ file_utils = FileUtils()
 s3 = boto3.client('s3')
 
 
-async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, docs_key, include_test, korean, blocks):
+async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, docs_key, include_test, korean, blocks, metadata):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
@@ -32,13 +32,13 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, do
 
         tasks = []
         readme_task = asyncio.create_task(doc_processor.process_readme(
-            repo_url, clone_dir, readme_key, korean, blocks))
+            repo_url, clone_dir, readme_key, korean, blocks, metadata))
         tasks.append(readme_task)
 
         doc_dir = os.path.join(clone_dir, "dododocs")
         if java_categories:
             docs_task = asyncio.create_task(process_docs(
-                java_categories, doc_dir, docs_key, korean))
+                java_categories, doc_dir, docs_key, korean, metadata))
             tasks.append(docs_task)
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -55,31 +55,17 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, do
         logger.error(f"문서 및 README 생성 오류: {str(e)}")
 
 
-async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool) -> bool:
+async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool, metadata: dict = None) -> bool:
     """문서 생성 및 요약 처리"""
     try:
         await doc_processor.generate_docs(directory_path, output_directory, korean)
         await doc_processor.summarize_docs_async(output_directory, korean)
         create_zip(output_directory, "/tmp/Docs.zip")
-        await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", docs_key)
+        await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", "result/"+docs_key, metadata)
         return True
     except Exception as doc_error:
         logger.error(f"문서 생성 중 오류 발생: {str(doc_error)}")
         return False
-
-
-async def perform_readme_only_generation(repo_url, clone_dir, repo_name, readme_key, korean, blocks):
-    """README 생성 작업만 백그라운드에서 수행"""
-    try:
-        readme = await doc_processor.process_readme(repo_url, clone_dir, readme_key, repo_name, korean, blocks)
-        if not readme:
-            logger.error("README 생성 실패")
-            raise Exception("README 생성 실패")
-
-        await add_data_to_db(f"{repo_name}_generated", clone_dir, [".md"])
-
-    except Exception as e:
-        logger.error(f"README 생성 오류: {str(e)}")
 
 
 async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
@@ -91,7 +77,7 @@ async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
 async def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
-        repo_name, user_name = parse_repo_url(repo_url)
+        user_name, repo_name = parse_repo_url(repo_url)
         current_directory = '/tmp'
         repo_path = os.path.join(current_directory, f"{repo_name}.zip")
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
@@ -187,11 +173,13 @@ async def generate(request):
             java_files_path = file_utils.find_files(clone_dir, (".java",))
             has_java_files = len(java_files_path) > 0
             logger.info(f"has_java_files: {has_java_files}")
-
+            metadata = {
+                'repo_url': request['repo_url']
+            }
             tasks = []
             tasks.append(asyncio.create_task(
                 perform_full_generation(
-                    request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'])
+                    request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
             ))
             # else:
             #     tasks.append(asyncio.create_task(
