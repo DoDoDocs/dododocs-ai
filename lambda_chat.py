@@ -20,7 +20,7 @@ origins = [
     "http://localhost:3000"
 ]
 
-CORS(app, resources={r"/chat": {"origins": origins}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 
 @app.route('/chat', methods=['POST'])
@@ -70,6 +70,11 @@ def chat():
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
         return jsonify({'answer': f"Error: {str(error)}", 'statusCode': 500}), 500
 
+@app.route('/ping', methods=['GET'])
+def ping():
+    """헬스 체크 엔드포인트"""
+    return jsonify({"status": "ok"}), 200
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5001)), debug=True)
