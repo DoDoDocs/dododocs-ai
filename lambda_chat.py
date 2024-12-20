@@ -1,9 +1,6 @@
-from fastapi import FastAPI, HTTPException, status
-from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import uvicorn
-from typing import Optional, List, Dict, Any
+from flask import Flask, Response, stream_with_context, request, jsonify
+import time
+import random
 import os
 from aws_lambda_powertools import Logger
 import json
@@ -11,80 +8,66 @@ from ktb_settings import *
 from ktb_chatbot import *
 from ktb_func import *
 
+app = Flask(__name__)
+
+# 로깅 설정
+logger = Logger(service="chat_service")
 
 origins = [
     "http://localhost:8080",
     "http://localhost:3000"
 ]
 
-# 로깅 설정
-logger = Logger(service="chat_service")
 
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-class ChatRequest(BaseModel):
-    repo_url: str
-    query: str
-    chat_history: Optional[List[Dict[str, Any]]] = None
-    stream: bool = True
-
-
-@app.post('/chat')
-async def chat(request: ChatRequest):
+@app.route('/chat', methods=['POST'])
+def chat():
     """채팅 엔드포인트"""
-    if not request.query.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Query cannot be empty"
-        )
-
-    chat_history = []
-    if request.chat_history:
-        for item in request.chat_history:
-            chat_history.append({"role": "user", "content": item["question"]})
-            chat_history.append(
-                {"role": "assistant", "content": item["answer"]})
-
     try:
-        response = codebase_chat(
-            request.query,
-            request.repo_url,
-            chat_history,
-            request.stream
-        )
+        data = request.get_json()
+        if not data or not data.get('query'):
+            return jsonify({"detail": "Query cannot be empty"}), 400
 
-        if request.stream:
-            return StreamingResponse(
-                response,
-                media_type="text/event-stream"
+        repo_url = data.get('repo_url')
+        query = data.get('query')
+        chat_history = data.get('chat_history')
+        stream = data.get('stream', True)
+
+        if chat_history:
+            chat_history_list = []
+            for item in chat_history:
+                chat_history_list.append(
+                    {"role": "user", "content": item["question"]})
+                chat_history_list.append(
+                    {"role": "assistant", "content": item["answer"]})
+            response = codebase_chat(
+                query,
+                repo_url,
+                chat_history_list,
+                stream
             )
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'answer': response})
-        }
+        else:
+            response = codebase_chat(
+                query,
+                repo_url,
+                chat_history,
+                stream
+            )
+
+        if stream:
+            def stream_response():
+                if isinstance(response, str):
+                    yield response.encode('utf-8')
+                else:
+                    for chunk in response:
+                        yield chunk.encode('utf-8')
+            return Response(stream_with_context(stream_response()), content_type='text/event-stream')
+        else:
+            return jsonify({'answer': response}), 200
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'answer': f"Error: {str(error)}"})
-        }
+        return jsonify({'answer': f"Error: {str(error)}", 'statusCode': 500}), 500
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "lambda_chat:app",
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-        reload=False,
-        workers=1
-    )
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8000)), debug=True)
