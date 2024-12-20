@@ -1,6 +1,4 @@
 from ktb_settings import *
-from urllib.parse import urlparse
-
 
 """**FUNCTIONS**"""
 
