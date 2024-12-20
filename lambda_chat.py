@@ -15,68 +15,63 @@ app = Flask(__name__)
 # 로깅 설정
 logger = Logger(service="chat_service")
 
-# CORS 전부 개방
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+origins = [
+    "http://localhost:8080",
+    "http://localhost:3000"
+]
+
+CORS(app, resources={r"/chat": {"origins": origins}},
+     supports_credentials=True)
 
 
 @app.route('/chat', methods=['POST'])
 def chat():
     """채팅 엔드포인트"""
-    if request.method == 'POST':
-        try:
-            if not request.is_json:
-                return jsonify({"detail": "Request must be JSON"}), 415
+    try:
+        data = request.get_json()
+        if not data or not data.get('query'):
+            return jsonify({"detail": "Query cannot be empty"}), 400
 
-            data = request.get_json()
-            if not data or not data.get('query'):
-                return jsonify({"detail": "Query cannot be empty"}), 400
+        repo_url = data.get('repo_url')
+        query = data.get('query')
+        chat_history = data.get('chat_history')
+        stream = data.get('stream', True)
 
-            repo_url = data.get('repo_url')
-            query = data.get('query')
-            chat_history = data.get('chat_history')
-            stream = data.get('stream', True)
+        if chat_history:
+            chat_history_list = []
+            for item in chat_history:
+                chat_history_list.append(
+                    {"role": "user", "content": item["question"]})
+                chat_history_list.append(
+                    {"role": "assistant", "content": item["answer"]})
+            response = codebase_chat(
+                query=query,
+                repo_url=repo_url,
+                chat_history=chat_history_list,
+                stream=stream
+            )
+        else:
+            response = codebase_chat(
+                query=query,
+                repo_url=repo_url,
+                chat_history=chat_history,
+                stream=stream
+            )
 
-            if chat_history:
-                chat_history_list = []
-                for item in chat_history:
-                    chat_history_list.append({"role": "user", "content": item["question"]})
-                    chat_history_list.append({"role": "assistant", "content": item["answer"]})
-                response = codebase_chat(
-                    query,
-                    repo_url,
-                    chat_history_list,
-                    stream
-                )
-            else:
-                response = codebase_chat(
-                    query,
-                    repo_url,
-                    chat_history,
-                    stream
-                )
+        if stream:
+            def stream_response():
+                if isinstance(response, str):
+                    yield f"data: {{\"message\": \"{response}\"}}\n\n".encode('utf-8')
+                else:
+                    for chunk in response:
+                        yield f"data: {{\"message\": \"{chunk}\"}}\n\n".encode('utf-8')
+            return Response(stream_with_context(stream_response()), content_type='text/event-stream')
+        else:
+            return jsonify({'answer': response}), 200
 
-            if stream:
-                def stream_response_generator():
-                    if isinstance(response, str):
-                        yield f"data: {{\"message\": \"{response}\"}}\n\n".encode('utf-8')
-                    else:
-                        for chunk in response:
-                            yield f"data: {{\"message\": \"{chunk}\"}}\n\n".encode('utf-8')
-                return Response(stream_with_context(stream_response_generator), content_type='text/event-stream')
-            else:
-                return jsonify({'answer': response}), 200
-
-        except Exception as error:
-            logger.error(f"채팅 오류: {str(error)}", exc_info=True)
-            return jsonify({'answer': f"Error: {str(error)}", 'statusCode': 500}), 500
-    elif request.method == 'GET':
-        return jsonify({"message": "GET request received"}), 200
-
-
-@app.route('/ping', methods=['GET'])
-def ping():
-    """헬스 체크 엔드포인트"""
-    return jsonify({"status": "ok"}), 200
+    except Exception as error:
+        logger.error(f"채팅 오류: {str(error)}", exc_info=True)
+        return jsonify({'answer': f"Error: {str(error)}", 'statusCode': 500}), 500
 
 
 if __name__ == '__main__':
