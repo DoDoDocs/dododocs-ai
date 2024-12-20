@@ -95,3 +95,4 @@ wheel==0.44.0
 wrapt==1.17.0
 zipp==3.21.0
 flask
+flask-cors
