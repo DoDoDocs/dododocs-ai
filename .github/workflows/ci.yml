@@ -30,7 +30,6 @@ jobs:
 
     - name: Docker 이미지 빌드 및 푸시
       run: |
-        cd lambda_generate
         echo "Using commit hash: ${{ env.COMMIT_HASH }}"
         docker build -t ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }} .
         docker push ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
