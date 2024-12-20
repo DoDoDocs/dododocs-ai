@@ -49,7 +49,7 @@ CHROMA_PATH = "/mnt/chroma_DB"
 
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-print(chroma_client.list_collections())
+
 
 def get_openai_client():
     return OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
