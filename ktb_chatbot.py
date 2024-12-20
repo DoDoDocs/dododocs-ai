@@ -107,9 +107,9 @@ def stream_response(query: str, db_list: List[Any], chat_history: Optional[List[
         system_prompt = CHATBOT_PROMPT
         user_prompt = f"""
 Retrieved Content:
-{retrieved_docs_source['documents']}
+{retrieved_docs_source}
 
-{retrieved_docs_generated['documents']}
+{retrieved_docs_generated}
 
 User Query / Instruct: {query}
 """
