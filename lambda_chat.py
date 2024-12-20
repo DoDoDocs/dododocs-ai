@@ -77,7 +77,7 @@ async def chat(request: ChatRequest):
             #     else:
             #         async for chunk in response:
             #             yield f"data: {{\"message\": \"{chunk}\"}}\n\n".encode('utf-8')
-            return StreamingResponse(
+            yield StreamingResponse(
                 response,
                 media_type="text/event-stream"
             )
