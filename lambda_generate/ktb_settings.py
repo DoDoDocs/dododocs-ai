@@ -120,6 +120,7 @@ def get_gemini_client(prompt: str):
 CHROMA_PATH = "/mnt/chroma_DB"
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+
 embedding_function = OpenAIEmbeddingFunction(
     api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
 
@@ -129,3 +130,5 @@ s3 = boto3.client(
 )
 
 BUCKET_NAME = 'haon-dododocs'
+
+print(chroma_client.list_collections())

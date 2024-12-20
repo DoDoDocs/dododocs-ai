@@ -10,5 +10,5 @@ requests
 python-dotenv
 google-generativeai
 chonkie
-aws-lambda-powertools
+aws-lambda-powertools 
 autotiktokenizer
