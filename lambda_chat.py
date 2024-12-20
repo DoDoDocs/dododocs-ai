@@ -1,10 +1,7 @@
 # flask_chat.py
 from flask import Flask, Response, stream_with_context, request, jsonify
-import time
-import random
 import os
 from aws_lambda_powertools import Logger
-import json
 from ktb_settings import *
 from ktb_chatbot import *
 from ktb_func import *
@@ -12,7 +9,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# 로깅 설정 
+# 로깅 설정
 logger = Logger(service="chat_service")
 
 origins = [
