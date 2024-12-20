@@ -1,3 +1,4 @@
+# flask_chat.py
 from flask import Flask, Response, stream_with_context, request, jsonify
 import time
 import random
@@ -7,6 +8,7 @@ import json
 from ktb_settings import *
 from ktb_chatbot import *
 from ktb_func import *
+from flask_cors import CORS
 
 app = Flask(__name__)
 
@@ -17,6 +19,9 @@ origins = [
     "http://localhost:8080",
     "http://localhost:3000"
 ]
+
+CORS(app, resources={r"/chat": {"origins": origins}},
+     supports_credentials=True)
 
 
 @app.route('/chat', methods=['POST'])
@@ -56,10 +61,10 @@ def chat():
         if stream:
             def stream_response():
                 if isinstance(response, str):
-                    yield response.encode('utf-8')
+                    yield f"data: {{\"message\": \"{response}\"}}\n\n".encode('utf-8')
                 else:
                     for chunk in response:
-                        yield chunk.encode('utf-8')
+                        yield f"data: {{\"message\": \"{chunk}\"}}\n\n".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
             return jsonify({'answer': response}), 200
@@ -70,4 +75,4 @@ def chat():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 8000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5001)), debug=True)
