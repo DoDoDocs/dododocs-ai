@@ -1,4 +1,4 @@
-# Python 3.9 이미지를 기반으로 설정
+# Python 3.12 이미지를 기반으로 설정
 FROM python:3.12
 
 # 작업 디렉토리 설정
@@ -23,4 +23,4 @@ ENV IS_DOCKER=true
 EXPOSE 8000
 
 # 실행 명령어
-CMD ["uvicorn", "lambda_chat:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug", "--timeout-keep-alive", "180"]
+CMD ["python", "flask_chat.py"]
