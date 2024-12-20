@@ -34,6 +34,36 @@ def db_search(query: str, db: Any, n_results: int = 3) -> Dict[str, Any]:
         raise
 
 
+def _build_context(retrieved_docs: Dict[str, Any], filenames: List[str]) -> str:
+    """Build context string from retrieved documents."""
+    context = ""
+    if retrieved_docs and filenames:
+        for i in range(len(retrieved_docs['documents'][0])):
+            if 'filename' in retrieved_docs['metadatas'][0][i]:
+                context += f"\nFILENAME: {retrieved_docs['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
+                    retrieved_docs['documents'][0][i]}\n"
+    return context
+
+
+def _create_prompt(query: str, source_context: str, generated_context: str, chat_history: Optional[List[dict]] = None) -> List[Dict[str, str]]:
+    """Create a prompt for the LLM."""
+    system_prompt = CHATBOT_PROMPT
+    user_prompt = f"""
+Retrieved Code Content:
+{source_context}
+
+Retrieved Document Content:
+{generated_context}
+
+User Query / Instruct: {query}
+"""
+    full_prompt = [{"role": "system", "content": system_prompt}]
+    if chat_history:
+        full_prompt.extend(chat_history)
+    full_prompt.append({"role": "user", "content": user_prompt})
+    return full_prompt
+
+
 def generate_response(query: str, db_list: List[Any], chat_history: Optional[List[dict]] = None, augmented_query: Optional[str] = None, stream: bool = False) -> str:
     """Generate a response using LLM based on retrieved documents."""
     try:
@@ -48,42 +78,20 @@ def generate_response(query: str, db_list: List[Any], chat_history: Optional[Lis
             retrieved_docs_generated, filenames_generated = db_search(
                 query, db_list[1], n_results=2)
 
-        # Context 구성
-        source_context = ""
-        generated_context = ""
-        if retrieved_docs_source and filenames_source:
-            for i in range(len(retrieved_docs_source['documents'][0])):
-                if 'filename' in retrieved_docs_source['metadatas'][0][i]:
-                    source_context += f"\nFILENAME: {retrieved_docs_source['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
-                        retrieved_docs_source['documents'][0][i]}\n"
+        source_context = _build_context(
+            retrieved_docs_source, filenames_source)
+        generated_context = _build_context(
+            retrieved_docs_generated, filenames_generated)
 
-        if retrieved_docs_generated and filenames_generated:
-            for i in range(len(retrieved_docs_generated['documents'][0])):
-                if 'filename' in retrieved_docs_generated['metadatas'][0][i]:
-                    generated_context += f"\nFILENAME: {retrieved_docs_generated['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
-                        retrieved_docs_generated['documents'][0][i]}\n"
-
-        system_prompt = CHATBOT_PROMPT
-        user_prompt = f"""
-Retrieved Code Content:
-{source_context}
-
-Retrieved Document Content:
-{generated_context}
-
-User Query / Instruct: {query}
-"""
-        full_prompt = [{"role": "system", "content": system_prompt}]
-        if chat_history:
-            full_prompt.extend(chat_history)
-        full_prompt.append({"role": "user", "content": user_prompt})
+        full_prompt = _create_prompt(
+            query, source_context, generated_context, chat_history)
 
         client_gpt = get_openai_client()
         response = client_gpt.chat.completions.create(
             model=GPT_MODEL,
             messages=full_prompt,
             temperature=0.32,
-            stream=False  # 항상 스트리밍 비활성화
+            stream=False
         )
 
         return response.choices[0].message.content
@@ -106,42 +114,20 @@ def stream_response(query: str, db_list: List[Any], chat_history: Optional[List[
             retrieved_docs_generated, filenames_generated = db_search(
                 query, db_list[1], n_results=2)
 
-        # Context 구성
-        source_context = ""
-        generated_context = ""
-        if retrieved_docs_source and filenames_source:
-            for i in range(len(retrieved_docs_source['documents'][0])):
-                if 'filename' in retrieved_docs_source['metadatas'][0][i]:
-                    source_context += f"\nFILENAME: {retrieved_docs_source['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
-                        retrieved_docs_source['documents'][0][i]}\n"
+        source_context = _build_context(
+            retrieved_docs_source, filenames_source)
+        generated_context = _build_context(
+            retrieved_docs_generated, filenames_generated)
 
-        if retrieved_docs_generated and filenames_generated:
-            for i in range(len(retrieved_docs_generated['documents'][0])):
-                if 'filename' in retrieved_docs_generated['metadatas'][0][i]:
-                    generated_context += f"\nFILENAME: {retrieved_docs_generated['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
-                        retrieved_docs_generated['documents'][0][i]}\n"
-
-        system_prompt = CHATBOT_PROMPT
-        user_prompt = f"""
-Retrieved Code Content:
-{source_context}
-
-Retrieved Document Content:
-{generated_context}
-
-User Query / Instruct: {query}
-"""
-        full_prompt = [{"role": "system", "content": system_prompt}]
-        if chat_history:
-            full_prompt.extend(chat_history)
-        full_prompt.append({"role": "user", "content": user_prompt})
+        full_prompt = _create_prompt(
+            query, source_context, generated_context, chat_history)
 
         client_gpt = get_openai_client()
         response = client_gpt.chat.completions.create(
             model=GPT_MODEL,
             messages=full_prompt,
             temperature=0.52,
-            stream=True  # 항상 스트리밍 활성화
+            stream=True
         )
 
         for chunk in response:
