@@ -1,0 +1,36 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - chat_server
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    # 두 변경 사항을 통합하거나 하나를 선택
+    - name: Extract commit hash
+      id: vars
+      run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+    - name: Create .env file from GitHub Secrets
+      run: |
+        echo "${{ secrets.ENV_FILE }}" > .env
+
+    - name: DockerHub 로그인
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Docker 이미지 빌드 및 푸시
+      run: |
+        cd lambda_generate
+        echo "Using commit hash: ${{ env.COMMIT_HASH }}"
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }} .
+        docker push ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
