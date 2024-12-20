@@ -12,7 +12,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# 로깅 설정
+# 로깅 설정 
 logger = Logger(service="chat_service")
 
 origins = [
