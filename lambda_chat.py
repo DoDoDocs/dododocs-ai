@@ -35,7 +35,7 @@ class ChatRequest(BaseModel):
     repo_url: str
     query: str
     chat_history: Optional[List[Dict[str, Any]]] = None
-    stream: bool = False
+    stream: bool = True
 
 
 @app.route('/chat')
