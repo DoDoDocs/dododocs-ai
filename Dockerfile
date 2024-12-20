@@ -23,4 +23,4 @@ ENV IS_DOCKER=true
 EXPOSE 8000
 
 # 실행 명령어
-CMD ["python", "flask_chat.py"]
+CMD ["python", "lambda_chat.py"]
