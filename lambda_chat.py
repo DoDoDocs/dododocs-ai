@@ -38,7 +38,7 @@ class ChatRequest(BaseModel):
     stream: bool = True
 
 
-@app.get('/chat')
+@app.post('/chat')
 async def chat(request: ChatRequest):
     """채팅 엔드포인트"""
     try:
