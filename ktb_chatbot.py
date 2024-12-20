@@ -96,20 +96,38 @@ def stream_response(query: str, db_list: List[Any], chat_history: Optional[List[
     """Generate a streaming response."""
     try:
         if augmented_query:
-            retrieved_docs_source = db_search(augmented_query, db_list[0])
-            retrieved_docs_generated = db_search(
-                augmented_query, db_list[1], n_results=1)
+            retrieved_docs_source, filenames_source = db_search(
+                augmented_query, db_list[0])
+            retrieved_docs_generated, filenames_generated = db_search(
+                augmented_query, db_list[1], n_results=2)
         else:
-            retrieved_docs_source = db_search(query, db_list[0])
-            retrieved_docs_generated = db_search(
-                query, db_list[1], n_results=1)
+            retrieved_docs_source, filenames_source = db_search(
+                query, db_list[0])
+            retrieved_docs_generated, filenames_generated = db_search(
+                query, db_list[1], n_results=2)
+
+        # Context 구성
+        source_context = ""
+        generated_context = ""
+        if retrieved_docs_source and filenames_source:
+            for i in range(len(retrieved_docs_source['documents'][0])):
+                if 'filename' in retrieved_docs_source['metadatas'][0][i]:
+                    source_context += f"\nFILENAME: {retrieved_docs_source['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
+                        retrieved_docs_source['documents'][0][i]}\n"
+
+        if retrieved_docs_generated and filenames_generated:
+            for i in range(len(retrieved_docs_generated['documents'][0])):
+                if 'filename' in retrieved_docs_generated['metadatas'][0][i]:
+                    generated_context += f"\nFILENAME: {retrieved_docs_generated['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
+                        retrieved_docs_generated['documents'][0][i]}\n"
 
         system_prompt = CHATBOT_PROMPT
         user_prompt = f"""
-Retrieved Content:
-{retrieved_docs_source}
+Retrieved Code Content:
+{source_context}
 
-{retrieved_docs_generated}
+Retrieved Document Content:
+{generated_context}
 
 User Query / Instruct: {query}
 """
