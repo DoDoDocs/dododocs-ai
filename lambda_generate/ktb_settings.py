@@ -23,7 +23,8 @@ def load_config(config_path: str) -> dict:
         return {}
 
 
-EFS_CONFIG_PATH = os.getenv('EFS_CONFIG_PATH', '/mnt/efs/config.json')
+EFS_CONFIG_PATH = os.getenv(
+    'EFS_CONFIG_PATH', '/mnt/chroma_DB/setting/config.json')
 config = load_config(EFS_CONFIG_PATH)
 
 """**PARAMETER SETTINGS**"""
@@ -34,7 +35,7 @@ SEED = config.get('seed', 213)
 TOP_LOGPROBS = config.get('top_logprobs', 5)
 EMBEDDING_MODEL = config.get('embedding_model_name', 'text-embedding-3-small')
 DISTANCE_TYPE = config.get('distance_type', 'inner_product')
-CHROMA_PATH = config.get('chroma_path', '/mnt/chroma_DB')
+CHROMA_PATH = config.get('chroma_path', '/mnt/chroma_DB/db')
 GPT_MAX_TOKENS = config.get('gpt_max_tokens', 120000)
 MAX_RETRIES = config.get('max_retries', 2)  # 최대 재시도 횟수
 RETRY_DELAY = config.get('retry_delay', 3)  # 재시도 간격 (초)

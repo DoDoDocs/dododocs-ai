@@ -827,3 +827,49 @@ class DocumentProcessor:
         result = file_path[:index]
 
         return result
+
+    async def summarize_docs_async_nogenerate(self, directory: str, korean: bool) -> None:
+        """
+        디렉토리 내의 'Service', 'Controller', 'Test' 폴더의 Markdown 파일에서 '## SUMMARY' 이후의 내용을 추출하여
+        각 폴더별로 {category}_summary.md 파일을 생성합니다.
+
+        Args:
+            directory (str): Markdown 파일이 있는 디렉토리 경로
+            korean (bool): 한국어 여부 (현재 사용되지 않음)
+        """
+        print("SUMMARIZE_DOCS_ASYNC_with_no_generate")
+
+        category_files = self.categorize_files(directory)
+        print(category_files)
+
+        for category in ["Controller", "Test"]:
+            category_dir = os.path.join(directory, category)
+            if not os.path.exists(category_dir):
+                print(f"디렉토리 없음: {category_dir}")
+                continue
+
+            summary_content = ""
+            for filename in category_files.get(category, []):
+                file_path = os.path.join(category_dir, filename)
+                try:
+                    async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+                        content = await f.read()
+                        # '## SUMMARY' 이후의 내용을 추출하는 정규 표현식
+                        match = re.search(
+                            r"## SUMMARY\s*(.*)", content, re.DOTALL)
+                        if match:
+                            summary_content += f"## {filename}\n"
+                            summary_content += match.group(1).strip() + "\n\n"
+                except Exception as e:
+                    logger.error(f"파일 읽기 오류: {file_path}, {str(e)}")
+                    continue
+
+            # 추출된 내용을 해당 카테고리 summary.md 파일에 저장
+            output_path = os.path.join(
+                directory, f"{category}_summary.md")
+            try:
+                async with aiofiles.open(output_path, "w", encoding="utf-8") as f:
+                    await f.write(summary_content)
+                print(f"{category}_summary.md 파일 생성 완료: {output_path}")
+            except Exception as e:
+                logger.error(f"{category}_summary.md 파일 생성 오류: {str(e)}")
