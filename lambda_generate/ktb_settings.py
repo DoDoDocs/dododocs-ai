@@ -15,11 +15,8 @@ def load_config(config_path: str) -> dict:
         with open(config_path, 'r') as f:
             config = json.load(f)
         return config
-    except FileNotFoundError:
-        print(f"Error: Config file not found at {config_path}")
-        return {}
-    except json.JSONDecodeError:
-        print(f"Error: Invalid JSON format in {config_path}")
+    except :
+        print("no exists json config")
         return {}
 
 
@@ -129,8 +126,21 @@ def get_gemini_client(prompt: str):
     )
 
 
+# ChromaDB 경로 확인
+if not os.path.exists(CHROMA_PATH):
+    print(f"Error: CHROMA_PATH does not exist: {CHROMA_PATH}")
+else:
+    print(f"CHROMA_PATH exists: {CHROMA_PATH}")
+    print("Directory contents:")
+    print(os.listdir(os.path.dirname(CHROMA_PATH)))
+
+try:
+    chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+    print("ChromaDB client initialized successfully.")
+except Exception as e:
+    print(f"Failed to initialize ChromaDB client: {e}")
 # ChromaDB 클라이언트 초기화
-chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+# chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
 embedding_function = OpenAIEmbeddingFunction(
     api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
