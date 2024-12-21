@@ -11,11 +11,8 @@ def load_config(config_path: str) -> dict:
         with open(config_path, 'r') as f:
             config = json.load(f)
         return config
-    except FileNotFoundError:
+    except:
         print(f"Error: Config file not found at {config_path}")
-        return {}
-    except json.JSONDecodeError:
-        print(f"Error: Invalid JSON format in {config_path}")
         return {}
 
 

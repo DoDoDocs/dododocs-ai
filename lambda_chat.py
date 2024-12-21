@@ -17,7 +17,7 @@ origins = [
     "http://localhost:3000"
 ]
 
-CORS(app, resources={r"/chat": {"origins": origins}},
+CORS(app, resources={r"/chat": {"origins": "*"}},
      supports_credentials=True)
 
 
