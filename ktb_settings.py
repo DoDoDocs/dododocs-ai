@@ -10,6 +10,7 @@ def load_config(config_path: str) -> dict:
     try:
         with open(config_path, 'r') as f:
             config = json.load(f)
+        print("config\n", config)
         return config
     except:
         print(f"Error: Config file not found at {config_path}")
