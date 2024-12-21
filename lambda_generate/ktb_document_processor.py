@@ -189,16 +189,18 @@ class DocumentProcessor:
             file_type=file_type
         )
 
-    async def process_readme(self, repo_url: str, clone_dir: str, readme_key: str, korean: bool, blocks: List[str], metadata: dict = None) -> List[Any]:
+    async def process_readme(self, repo_url: str, clone_dir: str, readme_key: str, korean: bool, blocks: List[str], metadata: dict = None, max_retries: int = 1) -> List[Any]:
         """모든 문서 처리 태스크 실행"""
         tasks = []
         start_time = time.perf_counter()
+
         # README 생성 태스크
         readme_task = asyncio.create_task(
             self._generate_readme(repo_url, clone_dir, korean, blocks),
             name="readme_generation"
         )
         tasks.append(readme_task)
+
         if "START_BLOCK" in blocks:
             # Usage 생성 태스크
             usage_task = asyncio.create_task(
@@ -206,24 +208,58 @@ class DocumentProcessor:
                 name="usage_generation"
             )
             tasks.append(usage_task)
-        # 모든 태스크 실행 및 결과 반환
-        try:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            print(f"results length: {len(results)}")
-            # README와 Usage 병합
-            if len(results) > 1 and isinstance(results[0], str) and isinstance(results[1], str):
-                merged_content = self._update_readme_with_usage(
-                    results[0], results[1])
-                await self._save_readme(merged_content, clone_dir, readme_key, metadata)
-            elif isinstance(results[0], str):
-                await self._save_readme(results[0], clone_dir, readme_key, metadata)
-            end_time = time.perf_counter()
-            print(f"README 및 Usage 생성 완료 처리 시간: {end_time - start_time} 초")
-            return results
 
-        except Exception as e:
-            logger.error(f"Task execution failed: {str(e)}")
-            raise
+        # 모든 태스크 실행 및 결과 반환
+        for attempt in range(max_retries):
+            try:
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                print(f"results length: {len(results)}")
+
+                # 오류가 발생한 태스크 식별 및 재시도
+                for i, result in enumerate(results):
+                    if isinstance(result, Exception):
+                        logger.error(
+                            f"Task {tasks[i].get_name()} failed: {str(result)}")
+                        if attempt < max_retries - 1:
+                            logger.info(f"Retrying task {tasks[i].get_name()} (attempt {
+                                        attempt + 1}/{max_retries})")
+                            if tasks[i].get_name() == "readme_generation":
+                                tasks[i] = asyncio.create_task(
+                                    self._generate_readme(
+                                        repo_url, clone_dir, korean, blocks),
+                                    name="readme_generation"
+                                )
+                            elif tasks[i].get_name() == "usage_generation":
+                                tasks[i] = asyncio.create_task(
+                                    self._generate_usage(
+                                        repo_url, clone_dir, korean),
+                                    name="usage_generation"
+                                )
+                            break  # 재시도 후 다시 gather 실행
+                else:
+                    # 모든 태스크가 성공적으로 완료된 경우
+                    if len(results) > 1 and isinstance(results[0], str) and isinstance(results[1], str):
+                        merged_content = self._update_readme_with_usage(
+                            results[0], results[1])
+                        await self._save_readme(merged_content, clone_dir, readme_key, metadata)
+                    elif isinstance(results[0], str):
+                        await self._save_readme(results[0], clone_dir, readme_key, metadata)
+
+                    end_time = time.perf_counter()
+                    print(f"README 및 Usage 생성 완료 처리 시간: {
+                          end_time - start_time} 초")
+                    return results
+
+            except Exception as e:
+                logger.error(f"Task execution failed: {str(e)}")
+                if attempt >= max_retries - 1:
+                    raise
+                else:
+                    logger.info(f"Retrying all tasks (attempt {
+                                attempt + 1}/{max_retries})")
+                    await asyncio.sleep(2 ** attempt)  # 지수 백오프
+
+        raise Exception("All retries failed for process_readme")
 
     async def get_optimized_source_files(self, repo_dir: str) -> Dict[str, List[SourceFileInfo]]:
         """모든 소스 파일 최적화하여 저장"""
