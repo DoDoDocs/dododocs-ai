@@ -16,9 +16,6 @@ RUN pip install --no-cache-dir google-generativeai --verbose
 # 애플리케이션 코드 복사
 COPY . .
 
-
-ENV IS_DOCKER=true
-
 # 포트 노출
 EXPOSE 5001
 

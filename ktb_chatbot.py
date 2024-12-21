@@ -142,14 +142,20 @@ def codebase_chat(query: str, repo_url: str, chat_history: List[dict] = None, st
     """채팅 응답 생성"""
     try:
         user_name, repo_name = parse_repo_url(repo_url)
-        vector_store_source = chroma_client.get_collection(
-            name=f"{repo_name}_source",
-            embedding_function=get_embedding_function()
-        )
-        vector_store_generated = chroma_client.get_collection(
-            name=f"{repo_name}_generated",
-            embedding_function=get_embedding_function()
-        )
+        collection_list = [
+            collention.name for collention in chroma_client.list_collections()]
+        if f"{repo_name}_source" in collection_list and f"{repo_name}_generated" in collection_list:
+            vector_store_source = chroma_client.get_or_create_collection(
+                name=f"{repo_name}_source",
+                embedding_function=get_embedding_function()
+            )
+            vector_store_generated = chroma_client.get_or_create_collection(
+                name=f"{repo_name}_generated",
+                embedding_function=get_embedding_function()
+            )
+        else:
+            raise Exception(
+                f"Collection {repo_name}_source or {repo_name}_generated does not exist")
         db_list = [vector_store_source, vector_store_generated]
         if chat_history:
             total_content = ''.join([msg['content']
