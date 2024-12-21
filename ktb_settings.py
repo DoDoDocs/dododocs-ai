@@ -53,6 +53,7 @@ elif DISTANCE_TYPE == "inner_product":
 else:
     DISTANCE = {"hnsw:space": "l2"}
 # ChromaDB 클라이언트 초기화
+print(CHROMA_PATH)
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
 
