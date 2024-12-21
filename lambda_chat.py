@@ -58,7 +58,7 @@ def chat():
         if stream:
             def stream_response():
                 if isinstance(response, str):
-                    yield f"data: {{\"message\": \"{response}\"}}\n\n".encode('utf-8')
+                    yield f"{response}".encode('utf-8')
                 else:
                     chunk_buffer = ""
                     for chunk in response:
@@ -66,7 +66,7 @@ def chat():
                         if len(chunk_buffer) > 50:
                             yield f"{chunk_buffer}".encode('utf-8')
                             chunk_buffer = ""
-                    yield f"data: {chunk_buffer}".encode('utf-8')
+                    yield f"{chunk_buffer}".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
             return jsonify({'answer': response}), 200
