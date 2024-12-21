@@ -3,20 +3,44 @@ import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import boto3
 import os
-from dotenv import load_dotenv
 import google.generativeai as genai
 from autotiktokenizer import AutoTikTokenizer
 from token_chunker import TokenChunker
-# .env 파일 로드
-load_dotenv()
+import json
+
+
+def load_config(config_path: str) -> dict:
+    """설정 파일을 읽어와서 딕셔너리로 반환합니다."""
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        return config
+    except FileNotFoundError:
+        print(f"Error: Config file not found at {config_path}")
+        return {}
+    except json.JSONDecodeError:
+        print(f"Error: Invalid JSON format in {config_path}")
+        return {}
+
+
+EFS_CONFIG_PATH = os.getenv('EFS_CONFIG_PATH', '/mnt/efs/config.json')
+config = load_config(EFS_CONFIG_PATH)
 
 """**PARAMETER SETTINGS**"""
-# 모델 설정
-MODEL = 'gemini-1.5-flash'
-GPT_MODEL = 'gpt-4o-mini'
-TEMPERATURE = 0.17
-SEED = 213
-TOP_LOGPROBS = 5  # logprob token 개수
+MODEL = config.get('model_name', 'gemini-1.5-flash')
+GPT_MODEL = config.get('gpt_model', 'gpt-4o-mini')
+TEMPERATURE = config.get('temperature', 0.17)
+SEED = config.get('seed', 213)
+TOP_LOGPROBS = config.get('top_logprobs', 5)
+EMBEDDING_MODEL = config.get('embedding_model_name', 'text-embedding-3-small')
+DISTANCE_TYPE = config.get('distance_type', 'inner_product')
+CHROMA_PATH = config.get('chroma_path', '/mnt/chroma_DB')
+GPT_MAX_TOKENS = config.get('gpt_max_tokens', 120000)
+MAX_RETRIES = config.get('max_retries', 2)  # 최대 재시도 횟수
+RETRY_DELAY = config.get('retry_delay', 3)  # 재시도 간격 (초)
+INCLUDE_TEST = config.get('include_test', False)
+BUCKET_NAME = config.get('bucket_name', 'haon-dododocs')
+
 
 if MODEL.startswith('gpt' or 'claude'):
     MAX_TOKENS_PER_BATCH = 1500000
@@ -25,8 +49,20 @@ elif MODEL.startswith('gemini'):
     MAX_TOKENS_PER_BATCH = 3500000
     MAX_TOKEN_LENGTH = 1000000
 
-os.environ['HF_HOME'] = '/tmp/huggingface'
+    # 임베딩 모델과 차원 설정
+if EMBEDDING_MODEL == "text-embedding-3-small":
+    EMBEDDING_DIM = 1536
+elif EMBEDDING_MODEL == "text-embedding-3-large":
+    EMBEDDING_DIM = 3072
 
+if DISTANCE_TYPE == "cosine":
+    DISTANCE = {"hnsw:space": "cosine"}
+elif DISTANCE_TYPE == "inner_product":
+    DISTANCE = {"hnsw:space": "ip"}
+else:
+    DISTANCE = {"hnsw:space": "l2"}
+
+os.environ['HF_HOME'] = '/tmp/huggingface'
 tokenizer = AutoTikTokenizer.from_pretrained("gpt2")
 chunker = TokenChunker(
     tokenizer=tokenizer,
@@ -38,27 +74,6 @@ embedding_chunker = TokenChunker(
     chunk_size=8191,  # maximum tokens per chunk
     chunk_overlap=2000  # overlap between chunks
 )
-
-embedding_model_name = os.getenv(
-    'EMBEDDING_MODEL_NAME', 'text-embedding-3-small')
-# 임베딩 모델과 차원 설정
-if embedding_model_name == "text-embedding-3-small":
-    EMBEDDING_MODEL = "text-embedding-3-small"
-    EMBEDDING_DIM = 1536
-elif embedding_model_name == "text-embedding-3-large":
-    EMBEDDING_MODEL = "text-embedding-3-large"
-    EMBEDDING_DIM = 3072
-
-DISTANCE_TYPE = "inner_product"
-
-if DISTANCE_TYPE == "cosine":
-    DISTANCE = {"hnsw:space": "cosine"}
-elif DISTANCE_TYPE == "inner_product":
-    DISTANCE = {"hnsw:space": "ip"}
-else:
-    DISTANCE = {"hnsw:space": "l2"}
-
-GPT_MAX_TOKENS = 120000
 
 FILE_EXTENSIONS = [
     '.py', '.pyw', '.pyc', '.pyo',  # Python
@@ -100,10 +115,6 @@ BUILD_FILE_NAMES = [
 SRC_FILE_NAMES = ['.py', '.js', '.ts', '.java', '.cpp',
                   '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
 
-MAX_RETRIES = 2  # 최대 재시도 횟수
-RETRY_DELAY = 3  # 재시도 간격 (초)
-INCLUDE_TEST = False
-
 
 def get_openai_client():
     return OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -117,7 +128,6 @@ def get_gemini_client(prompt: str):
     )
 
 
-CHROMA_PATH = "/mnt/chroma_DB"
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
@@ -129,6 +139,5 @@ s3 = boto3.client(
     's3'
 )
 
-BUCKET_NAME = 'haon-dododocs'
 
 print(chroma_client.list_collections())

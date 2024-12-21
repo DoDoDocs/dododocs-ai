@@ -7,7 +7,6 @@ pydantic
 aiofiles
 tiktoken
 requests
-python-dotenv
 google-generativeai
 chonkie
 aws-lambda-powertools 
