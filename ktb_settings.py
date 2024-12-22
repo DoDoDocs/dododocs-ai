@@ -50,9 +50,19 @@ elif DISTANCE_TYPE == "inner_product":
     DISTANCE = {"hnsw:space": "ip"}
 else:
     DISTANCE = {"hnsw:space": "l2"}
+    
+if not os.path.exists(CHROMA_PATH):
+    print("no directory path")
+else :
+    print("path exists")
+
 # ChromaDB 클라이언트 초기화
-print(CHROMA_PATH)
-chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+try:
+    chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+    print("ChromaDB client initialized successfully.")
+except Exception as e:
+    print(f"Failed to initialize ChromaDB client: {e}")
+
 
 
 def get_openai_client():
