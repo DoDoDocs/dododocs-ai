@@ -678,24 +678,43 @@ class DocumentProcessor:
                     for filename, content in zip(files, code_contents)
                 ])
 
-            chunk_size = 50
-            print(" generate docs task size: ", len(all_tasks))
-            for i in range(0, len(all_tasks), chunk_size):
-                chunk = all_tasks[i:i + chunk_size]
+            chunk_size = 40
+            # print(" generate docs task size: ", len(all_tasks))
+            # for i in range(0, len(all_tasks), chunk_size):
+            #     chunk = all_tasks[i:i + chunk_size]
 
-                tasks = [
-                    self.api_client.generate_text_client(
-                        prompts[category], content)
-                    for category, _, content in chunk
-                ]
-                summaries = await asyncio.gather(*tasks)
+            #     tasks = [
+            #         self.api_client.generate_text_client(
+            #             prompts[category], content)
+            #         for category, _, content in chunk
+            #     ]
+            #     summaries = await asyncio.gather(*tasks)
 
-                save_tasks = [
-                    self._save_docs_async(
-                        category, filename, summary, output_directory, io_pool)
-                    for (category, filename, _), summary in zip(chunk, summaries)
-                ]
-                await asyncio.gather(*save_tasks)
+            #     save_tasks = [
+            #         self._save_docs_async(
+            #             category, filename, summary, output_directory, io_pool)
+            #         for (category, filename, _), summary in zip(chunk, summaries)
+            #     ]
+            #     await asyncio.gather(*save_tasks)
+
+            # return output_directory
+            async with aiohttp.ClientSession() as session:
+                for i in range(0, len(all_tasks), chunk_size):
+                    chunk = all_tasks[i:i + chunk_size]
+
+                    tasks = [
+                        self.api_client.generate_text(
+                            session, prompts[category], content)
+                        for category, _, content in chunk
+                    ]
+                    summaries = await asyncio.gather(*tasks)
+
+                    save_tasks = [
+                        self._save_docs_async(
+                            category, filename, summary, output_directory, io_pool)
+                        for (category, filename, _), summary in zip(chunk, summaries)
+                    ]
+                    await asyncio.gather(*save_tasks)
 
             return output_directory
 

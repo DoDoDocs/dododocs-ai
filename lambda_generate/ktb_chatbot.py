@@ -98,10 +98,6 @@ async def process_file(file_path: Path, vector_store, file_metadata, chunk_id_co
 async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
     """DB에 데이터를 추가"""
     try:
-        # db_list = chroma_client.list_collections()
-        # collection_names = [collection.name for collection in db_list]
-        # if db_name in collection_names:
-        #     chroma_client.delete_collection(db_name) -> 동시에 같은 컬렉션 생성 / 수정 시 오류 발생
         vector_store = chroma_client.get_or_create_collection(
             name=db_name,
             embedding_function=embedding_function,
@@ -109,23 +105,24 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
         )
         repo_path = Path(path)
         total_files_processed = 0
-        chunk_id_counter = 0
-        for root, dirs, files in os.walk(repo_path):
+        processed_files = set()
+
+        for root, _, files in os.walk(repo_path):
             for filename in files:
                 if filename == '.DS_Store':
                     continue
                 if any(filename.endswith(ft) or filename == ft for ft in file_type):
-                    file_path = search_file(repo_path, filename)
-                    if file_path and file_path.exists() and file_path.is_file():
+                    file_path = Path(root) / filename
+                    if file_path.is_file():
                         file_metadata = {
                             "filename": filename,
                             "path": str(file_path),
                             "repository": db_name
                         }
-                        chunks_added = await process_file(file_path, vector_store, file_metadata, chunk_id_counter)
-                        chunk_id_counter += chunks_added
+                        chunks_added = await process_file(file_path, vector_store, file_metadata, processed_files)
                         if chunks_added > 0:
                             total_files_processed += 1
+
         if total_files_processed == 0:
             logger.error("No valid files were processed")
             return 0

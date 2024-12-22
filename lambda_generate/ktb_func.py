@@ -133,6 +133,7 @@ async def upload_to_s3(bucket: str, file_path: str, key: str, metadata: dict = N
                 key,
                 ExtraArgs=extra_args
             )
+            logger.info(f"S3 업로드 성공: {key}")
     except Exception as e:
         logger.error(f"S3 업로드 실패: {str(e)}")
         raise Exception(f"S3 업로드 실패: {str(e)}")

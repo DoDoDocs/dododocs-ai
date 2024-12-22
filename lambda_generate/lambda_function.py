@@ -29,7 +29,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, do
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
         java_categories = check_service_annotation(
-            java_files_path, include_test)
+            java_files_path)
 
         tasks = []
         readme_task = asyncio.create_task(doc_processor.process_readme(
@@ -60,8 +60,8 @@ async def process_docs(directory_path: dict[str, list], output_directory: str, d
     """문서 생성 및 요약 처리"""
     try:
         await doc_processor.generate_docs(directory_path, output_directory, korean)
-        await doc_processor.summarize_docs_async_nogenerate(output_directory, korean)
-        # await doc_processor.summarize_docs_async(output_directory, korean)
+        # await doc_processor.summarize_docs_async_nogenerate(output_directory, korean)
+        await doc_processor.summarize_docs_async(output_directory, korean)
         create_zip(output_directory, "/tmp/Docs.zip")
         await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", "result/"+docs_key, metadata)
         return True
@@ -125,7 +125,7 @@ async def generate(request):
         tasks.append(source_db_task)
 
         await perform_tasks_and_cleanup(tasks, (
-            repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir)
+            repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir+"/dododocs")
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}")
 

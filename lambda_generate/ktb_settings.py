@@ -70,7 +70,7 @@ chunker = TokenChunker(
 embedding_chunker = TokenChunker(
     tokenizer=tokenizer,
     chunk_size=8191,  # maximum tokens per chunk
-    chunk_overlap=2000  # overlap between chunks
+    chunk_overlap=200  # overlap between chunks
 )
 
 FILE_EXTENSIONS = [
