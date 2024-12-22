@@ -15,12 +15,12 @@ phases:
       - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
   build:
     commands:
-      - pwd
       - echo Build started on `date`
       - echo Building the Docker image...
-      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION: ${CODEBUILD_RESOLVED_SOURCE_VERSION}" # 이 부분 추가
-      - IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION}
-      - docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG} .
+      - IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c 1-7) # 앞 7자리만 추출
+      - echo ${IMAGE_TAG}
+      - docker build -t ${IMAGE_REPO_NAME}:${IMAGE_TAG} ./lambda_generate
+      - docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}
   post_build:
     commands:
       - echo Build completed on `date`
