@@ -18,6 +18,8 @@ phases:
       - pwd
       - echo Build started on `date`
       - echo Building the Docker image...
+      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION: ${CODEBUILD_RESOLVED_SOURCE_VERSION}" # 이 부분 추가
+      - IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION}
       - docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG} .
   post_build:
     commands:
