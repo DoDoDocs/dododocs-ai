@@ -14,11 +14,14 @@ logger = Logger(service="chat_service")
 
 origins = [
     "http://localhost:8080",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "https://dododocs.com",
+    "https://dododocs.com/api",
 ]
 
-CORS(app, resources={r"/chat": {"origins": "*"}},
-     supports_credentials=True)
+# CORS(app, resources={r"/chat": {"origins": "*"}},
+#      supports_credentials=True)
+CORS(app, resources={r"/chat": {"origins": origins}}, supports_credentials=True)
 
 
 @app.route('/chat', methods=['POST'])
@@ -26,6 +29,7 @@ def chat():
     """채팅 엔드포인트"""
     try:
         data = request.get_json()
+        logger.error(f"Received data: {data}")
         if not data or not data.get('query'):
             return jsonify({"detail": "Query cannot be empty"}), 400
 
