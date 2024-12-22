@@ -114,10 +114,6 @@ SRC_FILE_NAMES = ['.py', '.js', '.ts', '.java', '.cpp',
                   '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
 
 
-def get_openai_client():
-    return OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-
 def get_gemini_client(prompt: str):
     genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
     return genai.GenerativeModel(
@@ -126,7 +122,8 @@ def get_gemini_client(prompt: str):
     )
 
 
-OpenAI_client = get_openai_client()
+OpenAI_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 

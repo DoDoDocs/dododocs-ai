@@ -60,8 +60,8 @@ async def process_docs(directory_path: dict[str, list], output_directory: str, d
     """문서 생성 및 요약 처리"""
     try:
         await doc_processor.generate_docs(directory_path, output_directory, korean)
-        # await doc_processor.summarize_docs_async_nogenerate(output_directory, korean)
-        await doc_processor.summarize_docs_async(output_directory, korean)
+        await doc_processor.summarize_docs_async_nogenerate(output_directory, korean)
+        # await doc_processor.summarize_docs_async(output_directory, korean)
         create_zip(output_directory, "/tmp/Docs.zip")
         await upload_to_s3(BUCKET_NAME, "/tmp/Docs.zip", "result/"+docs_key, metadata)
         return True

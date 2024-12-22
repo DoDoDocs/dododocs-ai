@@ -303,6 +303,7 @@ class DocumentProcessor:
     async def _generate_readme(self, repo_url: str, clone_dir: str, korean: bool, blocks: List[str]) -> Optional[str]:
         """README 생성"""
         readme_template = generate_readme_prompt(blocks, korean)
+        start_time = time.perf_counter()
         try:
             source_files = self.get_optimized_source_files(clone_dir)
             if not source_files:
@@ -316,6 +317,9 @@ class DocumentProcessor:
                 result = await self._process_chunks(chunks, repo_url, readme_template, korean)
             else:
                 result = await self._process_single_context(chunks[0].text, repo_url, readme_template, model=GPT_MODEL)
+
+            logger.info(f"README 생성 완료 처리 시간 : {
+                        time.perf_counter() - start_time} 초")
             return result
 
         except Exception as e:
@@ -366,13 +370,8 @@ class DocumentProcessor:
     async def _process_chunks(self, chunks: List[str], repo_url: str, prompt: str, korean: bool) -> Optional[str]:
         """청크 비동기 처리"""
         if MODEL.startswith("gemini"):
-            genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-            model = genai.GenerativeModel(
-                model_name=MODEL,
-                system_instruction=prompt,
-            )
             tasks = [
-                self.process_chunk(chunk.text, repo_url, prompt, model)
+                self.process_chunk(chunk.text, repo_url, prompt)
                 for chunk in chunks
             ]
             chunk_summaries = await asyncio.gather(*tasks)
@@ -628,15 +627,19 @@ class DocumentProcessor:
         """청크 배치 처리"""
         return await self.api_client.process_chunks(chunks, summary_prompt)
 
-    async def generate_text_async(self, prompt, contents):
+    async def generate_text_async(self, session=None, prompt=None, contents=None):
         """비동기 텍스트 생성"""
-        return await self.api_client.generate_text_client(prompt, contents)
+        if session:
+            return await self.api_client.generate_text(session, prompt, contents)
+        else:
+            return await self.api_client.generate_text_client(prompt, contents)
 
-    async def process_chunk(self, chunk: str, repo_url: str, prompt: str, model) -> Optional[str]:
+    async def process_chunk(self, chunk: str, repo_url: str, prompt: str) -> Optional[str]:
         """단일 청크 처리"""
         try:
             start_time = time.perf_counter()
 
+            model = get_gemini_client(prompt)
             chat = model.start_chat(
                 history=[
                     {"role": "user", "parts": prompt}
