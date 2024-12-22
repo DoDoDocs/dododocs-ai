@@ -60,7 +60,7 @@ elif DISTANCE_TYPE == "inner_product":
 else:
     DISTANCE = {"hnsw:space": "l2"}
 
-tokenizer = tiktoken.get_encoding(GPT_MODEL)
+tokenizer = tiktoken.encoding_for_model(GPT_MODEL)
 chunker = TokenChunker(
     tokenizer=tokenizer,
     chunk_size=MAX_TOKEN_LENGTH,  # maximum tokens per chunk
