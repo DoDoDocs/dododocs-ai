@@ -260,7 +260,7 @@ class DocumentProcessor:
 
         raise Exception("All retries failed for process_readme")
 
-    async def get_optimized_source_files(self, repo_dir: str) -> Dict[str, List[SourceFileInfo]]:
+    def get_optimized_source_files(self, repo_dir: str) -> Dict[str, List[SourceFileInfo]]:
         """모든 소스 파일 최적화하여 저장"""
         package_map = {}
         source_extensions = {
@@ -290,13 +290,11 @@ class DocumentProcessor:
                             content,
                             source_extensions[ext]
                         )
-
                         # 패키지/모듈별로 분류
                         key = file_info.package or os.path.dirname(file_path)
                         if key not in package_map:
                             package_map[key] = []
                         package_map[key].append(file_info)
-
                 except Exception as e:
                     print(f"파일 파싱 오류 ({file_path}): {str(e)}")
 
@@ -306,9 +304,9 @@ class DocumentProcessor:
         """README 생성"""
         readme_template = generate_readme_prompt(blocks, korean)
         try:
-            source_files = await self.get_optimized_source_files(clone_dir)
+            source_files = self.get_optimized_source_files(clone_dir)
             if not source_files:
-                # logger.error("소스 파일을 찾을 수 없습니다.")
+                logger.error("소스 파일을 찾을 수 없습니다.")
                 return None
             optimized_context = self._build_optimized_context(source_files)
             chunks = self.text_processor.split_text(
@@ -329,10 +327,8 @@ class DocumentProcessor:
         build_files = []
 
         for root, _, files in os.walk(repo_dir):
-            # 제외할 디렉토리 체크
             if any(excl in root for excl in EXCLUDE_DIRS):
                 continue
-
             # node_modules 디렉토리 체크
             if "node_modules" in root:
                 continue
@@ -342,7 +338,7 @@ class DocumentProcessor:
 
                 # 일반 빌드 파일 체크
                 if file.endswith(tuple(BUILD_FILE_NAMES)) or any(name in file for name in BUILD_FILE_NAMES):
-                    # print(f"빌드 파일 발견: {file}")
+                    print(f"빌드 파일 발견: {file}")
                     build_files.append(file_path)
 
         if not build_files:
@@ -426,7 +422,6 @@ class DocumentProcessor:
         try:
             build_files = self._get_build_files(clone_dir)
             context = self._build_files_context(build_files, clone_dir)
-
             token_count = self.text_processor.count_tokens(context)
             print(f"Total build files: {
                   len(build_files)}, tokens: {token_count}")
@@ -436,7 +431,7 @@ class DocumentProcessor:
                 print(f"Split into {len(chunks)} chunks - USAGE")
                 result = await self._process_chunks(chunks, repo_url, usage_template, korean)
             else:
-                result = await self._process_single_context(context, repo_url, usage_template, model="gpt-4o-mini")
+                result = await self._process_single_context(context, repo_url, usage_template, model="gpt-4o")
 
             end_time = time.perf_counter()
             print(f"USAGE 생성 완료 처리 시간: {end_time - start_time} 초")
@@ -729,7 +724,7 @@ class DocumentProcessor:
 
     async def summarize_docs_async(self, directory, korean: bool):
         category_files = self.categorize_files(directory)
-        summaries = {"Controller": {}}
+        summaries = {"Controller": {}, "Test": {}}
 
         with ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()

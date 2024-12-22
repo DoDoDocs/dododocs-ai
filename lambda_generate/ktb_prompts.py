@@ -597,7 +597,7 @@ def generate_readme_prompt(blocks, korean=False):
 4. **Do not add unnecessary content**: Include only the content specified in the template.
 
 Below is the README.md template to fill out:
-
+Must response in {language}
 ---
 
 {readme_template}
