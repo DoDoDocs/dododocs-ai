@@ -9,5 +9,4 @@ tiktoken
 requests
 google-generativeai
 chonkie
-aws-lambda-powertools 
-autotiktokenizer
+aws-lambda-powertools

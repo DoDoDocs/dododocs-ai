@@ -1,10 +1,10 @@
 from openai import OpenAI
+import tiktoken
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import boto3
 import os
 import google.generativeai as genai
-from autotiktokenizer import AutoTikTokenizer
 from token_chunker import TokenChunker
 import json
 
@@ -60,8 +60,7 @@ elif DISTANCE_TYPE == "inner_product":
 else:
     DISTANCE = {"hnsw:space": "l2"}
 
-os.environ['HF_HOME'] = '/tmp/huggingface'
-tokenizer = AutoTikTokenizer.from_pretrained("gpt2")
+tokenizer = tiktoken.get_encoding(GPT_MODEL)
 chunker = TokenChunker(
     tokenizer=tokenizer,
     chunk_size=MAX_TOKEN_LENGTH,  # maximum tokens per chunk
@@ -70,7 +69,7 @@ chunker = TokenChunker(
 embedding_chunker = TokenChunker(
     tokenizer=tokenizer,
     chunk_size=8191,  # maximum tokens per chunk
-    chunk_overlap=200  # overlap between chunks
+    chunk_overlap=128  # overlap between chunks
 )
 
 FILE_EXTENSIONS = [
