@@ -25,6 +25,8 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}
-      - printf '[{"name":"%s","imageUri":"%s"}]' "${CONTAINER_NAME}" "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}" > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' "${CONTAINER_NAME}" "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}:${IMAGE_TAG}" > /codebuild/output/imagedefinitions.json
 artifacts:
-  files: imagedefinitions.json
+  files:
+    - imagedefinitions.json
+  base-directory: /codebuild/output/
