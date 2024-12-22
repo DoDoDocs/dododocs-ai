@@ -111,7 +111,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                         }
                         chunks_added = await process_file(file_path, vector_store, file_metadata)
                         if chunks_added > 0:
-                            total_files_processed += 1
+                            total_files_processed += chunks_added
 
         if total_files_processed == 0:
             logger.error("No valid files were processed")
