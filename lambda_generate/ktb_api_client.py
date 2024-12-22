@@ -123,7 +123,7 @@ class APIClient:
         while attempt < max_retries:
             try:
                 response = await self.client.chat.completions.create(
-                    model=self.model,
+                    model=GPT_MODEL,
                     messages=[
                         {"role": "system", "content": prompt},
                         {"role": "user", "content": content},
