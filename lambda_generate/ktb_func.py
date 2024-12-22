@@ -92,6 +92,7 @@ def create_zip(directory, zip_path):
         with zipfile.ZipFile(zip_path, 'w') as zip_ref:
             return  # 빈 ZIP 파일 생성 후 함수 종료
     with zipfile.ZipFile(zip_path, 'w') as zip_ref:
+        logger.info(f"zip_path: {zip_path}")
         for root, dirs, files in os.walk(directory):
             for file in files:
                 file_path = os.path.join(root, file)

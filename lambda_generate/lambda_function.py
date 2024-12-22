@@ -76,7 +76,7 @@ async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
     await async_cleanup(*cleanup_args)
 
 
-async def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
+def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
         user_name, repo_name = parse_repo_url(repo_url)
@@ -86,12 +86,7 @@ async def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str,
         print(f"repo_path: {repo_path}")
         print(f"clone_dir: {clone_dir}")
         download_zip_from_s3(BUCKET_NAME, s3_key, repo_path)
-        while not os.path.exists(repo_path):
-            await asyncio.sleep(0.1)
-
         extract_zip(repo_path, clone_dir)
-        while not os.path.exists(clone_dir) or not os.listdir(clone_dir):
-            await asyncio.sleep(0.1)
 
         logger.info(f"Repository extraction completed: {clone_dir}")
 
@@ -104,48 +99,35 @@ async def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str,
 
 async def generate(request):
     """문서 및 README 생성 작업 수행"""
-    attempt = 0
-    while attempt < MAX_RETRIES:
-        try:
-            repo_dir, clone_dir, repo_name, user_name = await prepare_repository(
-                request['repo_url'],
-                request['s3_key']
-            )
-            java_files_path = file_utils.find_files(clone_dir, (".java",))
-            has_java_files = len(java_files_path) > 0
-            logger.info(f"has_java_files: {has_java_files}")
-            metadata = {
-                'repo_url': request['repo_url']
-            }
-            tasks = []
-            tasks.append(asyncio.create_task(
-                perform_full_generation(
-                    request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
-            ))
+    # attempt = 0
+    try:
+        repo_dir, clone_dir, repo_name, user_name = prepare_repository(
+            request['repo_url'],
+            request['s3_key']
+        )
+        java_files_path = file_utils.find_files(clone_dir, (".java",))
+        has_java_files = len(java_files_path) > 0
+        logger.info(f"has_java_files: {has_java_files}")
+        metadata = {
+            'repo_url': request['repo_url']
+        }
+        tasks = []
+        tasks.append(asyncio.create_task(
+            perform_full_generation(
+                request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
+        ))
 
-            file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
-            logger.info(f"total files : {len(file_types)}")
-            source_db_task = asyncio.create_task(
-                add_data_to_db(f"{repo_name}_source", clone_dir, file_types)
-            )
-            tasks.append(source_db_task)
+        file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
+        logger.info(f"total files : {len(file_types)}")
+        source_db_task = asyncio.create_task(
+            add_data_to_db(f"{repo_name}_source", clone_dir, file_types)
+        )
+        tasks.append(source_db_task)
 
-            await perform_tasks_and_cleanup(tasks, (
-                repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir)
-
-            return
-
-        except Exception as e:
-            attempt += 1
-            logger.error(f"문서 및 README 생성 오류 (시도 {
-                         attempt}/{MAX_RETRIES}): {str(e)}")
-            if attempt >= MAX_RETRIES:
-                logger.error("최대 재시도 횟수에 도달했습니다. 작업을 중단합니다.")
-                break
-            else:
-                logger.info(f"{RETRY_DELAY}초 후에 재시도합니다...")
-                await asyncio.sleep(RETRY_DELAY)
-    logger.error(f"문서 및 README 생성 오류: {str(e)}")
+        await perform_tasks_and_cleanup(tasks, (
+            repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir)
+    except Exception as e:
+        logger.error(f"문서 및 README 생성 오류: {str(e)}")
 
 
 def lambda_handler(event, context):

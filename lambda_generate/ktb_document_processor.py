@@ -308,7 +308,7 @@ class DocumentProcessor:
         try:
             source_files = await self.get_optimized_source_files(clone_dir)
             if not source_files:
-                logger.error("소스 파일을 찾을 수 없습니다.")
+                # logger.error("소스 파일을 찾을 수 없습니다.")
                 return None
             optimized_context = self._build_optimized_context(source_files)
             chunks = self.text_processor.split_text(
