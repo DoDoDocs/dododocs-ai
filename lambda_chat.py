@@ -21,10 +21,11 @@ origins = [
 
 # CORS(app, resources={r"/chat": {"origins": "*"}},
 #      supports_credentials=True)
-CORS(app, resources={r"/chat": {"origins": origins}}, supports_credentials=True)
+CORS(app, resources={r"/chat": {"origins": origins}},
+     supports_credentials=True)
 
 
-@app.route('/chat', methods=['POST'])
+@app.route('/chat', methods=['POST', 'GET'])
 def chat():
     """채팅 엔드포인트"""
     try:
@@ -68,6 +69,7 @@ def chat():
                     for chunk in response:
                         chunk_buffer += chunk
                         if len(chunk_buffer) > 50:
+                            logger.info(f"chunk_buffer: {chunk_buffer}")
                             yield f"{chunk_buffer}".encode('utf-8')
                             chunk_buffer = ""
                     yield f"{chunk_buffer}".encode('utf-8')
