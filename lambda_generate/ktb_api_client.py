@@ -128,6 +128,8 @@ class APIClient:
                         {"role": "system", "content": prompt},
                         {"role": "user", "content": content},
                     ],
+                    temperature=self.temperature,
+                    timeout=10000
                 )
                 if response.choices:
                     return response.choices[0].message.content
