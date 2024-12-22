@@ -17,7 +17,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # API 클라이언트 및 문서 프로세서 초기화
-api_client = APIClient(os.getenv('OPENAI_API_KEY'))
+api_client = APIClient()
 doc_processor = DocumentProcessor(api_client)
 file_utils = FileUtils()
 
@@ -102,6 +102,52 @@ async def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str,
         raise Exception(f"Repository preparation failed: {str(e)}")
 
 
+async def generate(request):
+    """문서 및 README 생성 작업 수행"""
+    attempt = 0
+    while attempt < MAX_RETRIES:
+        try:
+            repo_dir, clone_dir, repo_name, user_name = await prepare_repository(
+                request['repo_url'],
+                request['s3_key']
+            )
+            java_files_path = file_utils.find_files(clone_dir, (".java",))
+            has_java_files = len(java_files_path) > 0
+            logger.info(f"has_java_files: {has_java_files}")
+            metadata = {
+                'repo_url': request['repo_url']
+            }
+            tasks = []
+            tasks.append(asyncio.create_task(
+                perform_full_generation(
+                    request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
+            ))
+
+            file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
+            logger.info(f"total files : {len(file_types)}")
+            source_db_task = asyncio.create_task(
+                add_data_to_db(f"{repo_name}_source", clone_dir, file_types)
+            )
+            tasks.append(source_db_task)
+
+            await perform_tasks_and_cleanup(tasks, (
+                repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir)
+
+            return
+
+        except Exception as e:
+            attempt += 1
+            logger.error(f"문서 및 README 생성 오류 (시도 {
+                         attempt}/{MAX_RETRIES}): {str(e)}")
+            if attempt >= MAX_RETRIES:
+                logger.error("최대 재시도 횟수에 도달했습니다. 작업을 중단합니다.")
+                break
+            else:
+                logger.info(f"{RETRY_DELAY}초 후에 재시도합니다...")
+                await asyncio.sleep(RETRY_DELAY)
+    logger.error(f"문서 및 README 생성 오류: {str(e)}")
+
+
 def lambda_handler(event, context):
     """AWS Lambda 핸들러"""
     try:
@@ -160,9 +206,11 @@ def lambda_handler(event, context):
         }
 
         response = requests.put(url, json=body)
+        logger.info(f"response: {response}, response.status_code: {
+                    response.status_code}")
         return {
             "statusCode": 200,
-            "body": json.dumps({"message": "문서 생성 작업이 시작되었습니다."})
+            "body": json.dumps({"message": "All generation completed"})
         }
     except Exception as e:
         logger.error(f"문서 생성 오류: {str(e)}")
@@ -170,54 +218,3 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"error": f"문서 생성 오류: {str(e)}"})
         }
-
-
-async def generate(request):
-    """문서 및 README 생성 작업 수행"""
-    attempt = 0
-    while attempt < MAX_RETRIES:
-        try:
-            repo_dir, clone_dir, repo_name, user_name = await prepare_repository(
-                request['repo_url'],
-                request['s3_key']
-            )
-            java_files_path = file_utils.find_files(clone_dir, (".java",))
-            has_java_files = len(java_files_path) > 0
-            logger.info(f"has_java_files: {has_java_files}")
-            metadata = {
-                'repo_url': request['repo_url']
-            }
-            tasks = []
-            tasks.append(asyncio.create_task(
-                perform_full_generation(
-                    request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
-            ))
-            # else:
-            #     tasks.append(asyncio.create_task(
-            #         perform_readme_only_generation(
-            #             request['repo_url'], clone_dir, repo_name, request['readme_key'], request['korean'], request['blocks'])
-            #     ))
-
-            file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
-            logger.info(f"total files : {len(file_types)}")
-            source_db_task = asyncio.create_task(
-                add_data_to_db(f"{repo_name}_source", clone_dir, file_types)
-            )
-            tasks.append(source_db_task)
-
-            await perform_tasks_and_cleanup(tasks, (
-                repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir)
-
-            return
-
-        except Exception as e:
-            attempt += 1
-            logger.error(f"문서 및 README 생성 오류 (시도 {
-                         attempt}/{MAX_RETRIES}): {str(e)}")
-            if attempt >= MAX_RETRIES:
-                logger.error("최대 재시도 횟수에 도달했습니다. 작업을 중단합니다.")
-                break
-            else:
-                logger.info(f"{RETRY_DELAY}초 후에 재시도합니다...")
-                await asyncio.sleep(RETRY_DELAY)
-    logger.error(f"문서 및 README 생성 오류: {str(e)}")

@@ -214,7 +214,6 @@ class DocumentProcessor:
             try:
                 results = await asyncio.gather(*tasks, return_exceptions=True)
                 print(f"results length: {len(results)}")
-
                 # 오류가 발생한 태스크 식별 및 재시도
                 for i, result in enumerate(results):
                     if isinstance(result, Exception):
@@ -371,9 +370,13 @@ class DocumentProcessor:
     async def _process_chunks(self, chunks: List[str], repo_url: str, prompt: str, korean: bool) -> Optional[str]:
         """청크 비동기 처리"""
         if MODEL.startswith("gemini"):
-            # 세마포어 없이 비동기적으로 청크 처리
+            genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+            model = genai.GenerativeModel(
+                model_name=MODEL,
+                system_instruction=prompt,
+            )
             tasks = [
-                self.process_chunk(chunk.text, repo_url, prompt)
+                self.process_chunk(chunk.text, repo_url, prompt, model)
                 for chunk in chunks
             ]
             chunk_summaries = await asyncio.gather(*tasks)
@@ -433,7 +436,7 @@ class DocumentProcessor:
                 print(f"Split into {len(chunks)} chunks - USAGE")
                 result = await self._process_chunks(chunks, repo_url, usage_template, korean)
             else:
-                result = await self._process_single_context(context, repo_url, usage_template, model="gpt-4o")
+                result = await self._process_single_context(context, repo_url, usage_template, model="gpt-4o-mini")
 
             end_time = time.perf_counter()
             print(f"USAGE 생성 완료 처리 시간: {end_time - start_time} 초")
@@ -575,8 +578,8 @@ class DocumentProcessor:
             params["top_logprobs"] = top_logprobs
             params["seed"] = SEED
             print("model: ", model)
-            client_gpt = get_openai_client()
-            completion = client_gpt.chat.completions.create(**params)
+
+            completion = OpenAI_client.chat.completions.create(**params)
             return completion.choices[0].message.content, None  # 텍스트만 반환
 
         except Exception as e:
@@ -630,16 +633,15 @@ class DocumentProcessor:
         """청크 배치 처리"""
         return await self.api_client.process_chunks(chunks, summary_prompt)
 
-    async def generate_text_async(self, session, prompt, contents):
+    async def generate_text_async(self, prompt, contents):
         """비동기 텍스트 생성"""
-        return await self.api_client.generate_text(session, prompt, contents)
+        return await self.api_client.generate_text_client(prompt, contents)
 
-    async def process_chunk(self, chunk: str, repo_url: str, prompt: str) -> Optional[str]:
+    async def process_chunk(self, chunk: str, repo_url: str, prompt: str, model) -> Optional[str]:
         """단일 청크 처리"""
         try:
             start_time = time.perf_counter()
 
-            model = get_gemini_client(prompt)
             chat = model.start_chat(
                 history=[
                     {"role": "user", "parts": prompt}
@@ -682,23 +684,23 @@ class DocumentProcessor:
                 ])
 
             chunk_size = 50
-            async with aiohttp.ClientSession() as session:
-                for i in range(0, len(all_tasks), chunk_size):
-                    chunk = all_tasks[i:i + chunk_size]
+            print(" generate docs task size: ", len(all_tasks))
+            for i in range(0, len(all_tasks), chunk_size):
+                chunk = all_tasks[i:i + chunk_size]
 
-                    tasks = [
-                        self.api_client.generate_text(
-                            session, prompts[category], content)
-                        for category, _, content in chunk
-                    ]
-                    summaries = await asyncio.gather(*tasks)
+                tasks = [
+                    self.api_client.generate_text_client(
+                        prompts[category], content)
+                    for category, _, content in chunk
+                ]
+                summaries = await asyncio.gather(*tasks)
 
-                    save_tasks = [
-                        self._save_docs_async(
-                            category, filename, summary, output_directory, io_pool)
-                        for (category, filename, _), summary in zip(chunk, summaries)
-                    ]
-                    await asyncio.gather(*save_tasks)
+                save_tasks = [
+                    self._save_docs_async(
+                        category, filename, summary, output_directory, io_pool)
+                    for (category, filename, _), summary in zip(chunk, summaries)
+                ]
+                await asyncio.gather(*save_tasks)
 
             return output_directory
 
@@ -716,7 +718,7 @@ class DocumentProcessor:
         }
 
         # 각 카테고리 폴더 확인
-        for category in ["Service", "Controller", "Test"]:
+        for category in ["Controller", "Test"]:
             category_path = os.path.join(directory, category)
             if os.path.exists(category_path):
                 for filename in os.listdir(category_path):
@@ -831,7 +833,7 @@ class DocumentProcessor:
     async def summarize_docs_async_nogenerate(self, directory: str, korean: bool) -> None:
         """
         디렉토리 내의 'Service', 'Controller', 'Test' 폴더의 Markdown 파일에서 '## SUMMARY' 이후의 내용을 추출하여
-        각 폴더별로 {category}_summary.md 파일을 생성합니다.
+        각 폴더별로 category_summary.md 파일을 생성합니다.
 
         Args:
             directory (str): Markdown 파일이 있는 디렉토리 경로

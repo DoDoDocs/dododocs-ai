@@ -3,8 +3,10 @@ import asyncio
 import logging
 from typing import Optional, List, Dict
 from ktb_settings import *
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
+
 
 class APIClient:
     """API 요청 처리 클래스"""
@@ -12,6 +14,7 @@ class APIClient:
     def __init__(self, model: str = MODEL, temperature: float = TEMPERATURE):
         self.model = model
         self.temperature = temperature
+        self.client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
     def _get_headers(self) -> dict:
         """헤더를 동적으로 가져오는 메서드"""
@@ -93,13 +96,15 @@ class APIClient:
                             return data["choices"][0]["message"]["content"]
                         else:
                             error_text = await response.text()
-                            logger.error(f"API 오류: {response.status} - {error_text}")
+                            logger.error(
+                                f"API 오류: {response.status} - {error_text}")
                             if response.status in {502, 503, 504}:
                                 attempt += 1
                                 logger.info(f"재시도 {attempt}/{max_retries}...")
                                 await asyncio.sleep(2 ** attempt)  # 지수 백오프
                             else:
-                                raise Exception(f"API 오류: {response.status} - {error_text}")
+                                raise Exception(
+                                    f"API 오류: {response.status} - {error_text}")
             except aiohttp.ClientOSError as e:
                 if isinstance(e.__cause__, BrokenPipeError):
                     logger.warning("Broken pipe 감지. 재시도합니다.")
@@ -112,13 +117,37 @@ class APIClient:
                 return None
         return None
 
+    async def generate_text_client(self, prompt: str, content: str, max_retries: int = MAX_RETRIES) -> Optional[str]:
+        """텍스트 생성 API 호출"""
+        attempt = 0
+        while attempt < max_retries:
+            try:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": prompt},
+                        {"role": "user", "content": content},
+                    ],
+                )
+                if response.choices:
+                    return response.choices[0].message.content
+                else:
+                    logger.error(f"API 응답에 choices가 없습니다: {response}")
+                    attempt += 1
+                    await asyncio.sleep(2 ** attempt)
+            except Exception as e:
+                logger.error(f"API 호출 오류: {str(e)}", exc_info=True)
+                attempt += 1
+                await asyncio.sleep(2 ** attempt)
+        return None
+
     async def process_chunks(self, chunks: List[str], prompt: str, batch_size: int = 50) -> List[str]:
         """청크 배치 처리"""
         results = []
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i:i + batch_size]
             batch_results = await asyncio.gather(*[
-                self.generate_text(prompt, chunk)
+                self.generate_text_client(prompt, chunk)
                 for chunk in batch
             ])
             results.extend([r for r in batch_results if r is not None])

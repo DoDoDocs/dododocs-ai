@@ -129,6 +129,7 @@ def get_gemini_client(prompt: str):
     )
 
 
+OpenAI_client = get_openai_client()
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
