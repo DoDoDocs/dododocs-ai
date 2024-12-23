@@ -77,24 +77,45 @@ def chat():
                 chat_history=chat_history,
                 stream=stream
             )
-
+        test_generator = {
+            "test1",
+            "test2",
+            "test3",
+            "test4",
+            "test5",
+        }
         if stream:
+            test_generator = ["test1", "test2", "test3", "test4", "test5"]
+
             def stream_response():
-                if isinstance(response, str):
-                    yield f"{response}".encode('utf-8')
-                else:
-                    chunk_buffer = ""
-                    for chunk in response:
-                        chunk_buffer += chunk
-                        if len(chunk_buffer) > 50:
-                            logger.info(f"chunk_buffer: {chunk_buffer}")
-                            yield f"{chunk_buffer}".encode('utf-8')
-                            chunk_buffer = ""
-                    yield f"{chunk_buffer}".encode('utf-8')
+                for item in test_generator:
+                    yield f"data: {json.dumps({'answer': item})}\n\n".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
-            logger.info(f"response: {response}")
-            return jsonify({'answer': response}), 200
+            if isinstance(response, str):
+                return jsonify({'answer': response}), 200
+            else:
+                full_response = "".join(response)
+                logger.info(f"response: {full_response}")
+                return jsonify({'answer': full_response}), 200
+
+        # if stream:
+        #     def stream_response():
+        #         if isinstance(response, str):
+        #             yield f"{response}".encode('utf-8')
+        #         else:
+        #             chunk_buffer = ""
+        #             for chunk in response:
+        #                 chunk_buffer += chunk
+        #                 if len(chunk_buffer) > 50:
+        #                     logger.info(f"chunk_buffer: {chunk_buffer}")
+        #                     yield f"{chunk_buffer}".encode('utf-8')
+        #                     chunk_buffer = ""
+        #             yield f"{chunk_buffer}".encode('utf-8')
+        #     return Response(stream_with_context(stream_response()), content_type='text/event-stream')
+        # else:
+        #     logger.info(f"response: {response}")
+        #     return jsonify({'answer': response}), 200
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
