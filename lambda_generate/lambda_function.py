@@ -208,27 +208,26 @@ def lambda_handler(event, context):
             's3_key': s3_key
         }
         MAX_RETRIES = 0
-        attempt = 0
-        result = asyncio.run(generate(request))
-        if result:
-            # 챗봇 준비 완료 백엔드 호출 함수 생성
-            url = "https://dododocs.com/api/register/status/chatbot"
-            body = {
-                "repoUrl": repo_url,
-                "chatbotCompleted": True
-            }
-        else:
-            while attempt < MAX_RETRIES:
-                result = asyncio.run(generate(request))
-                attempt += 1
-                if result:
-                    break
-                time.sleep(1)
-                url = "https://dododocs.com/api/register/status/chatbot"
-                body = {
-                    "repoUrl": repo_url,
-                    "chatbotCompleted": True
-                }
+        # attempt = 0
+        asyncio.run(generate(request))
+        # 챗봇 준비 완료 백엔드 호출 함수 생성
+        url = "https://dododocs.com/api/register/status/chatbot"
+        body = {
+            "repoUrl": repo_url,
+            "chatbotCompleted": True
+        }
+        # else:
+        #     while attempt < MAX_RETRIES:
+        #         result = asyncio.run(generate(request))
+        #         attempt += 1
+        #         if result:
+        #             break
+        #         time.sleep(1)
+        #         url = "https://dododocs.com/api/register/status/chatbot"
+        #         body = {
+        #             "repoUrl": repo_url,
+        #             "chatbotCompleted": True
+        #         }
         response = requests.put(url, json=body)
         logger.info(f"response: {response}, response.status_code: {
                     response.status_code}, response.json(): {response.json()}")
