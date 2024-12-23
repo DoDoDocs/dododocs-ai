@@ -6,6 +6,8 @@ from ktb_settings import *
 from ktb_chatbot import *
 from ktb_func import *
 from flask_cors import CORS
+import time
+
 
 app = Flask(__name__)
 
@@ -90,6 +92,7 @@ def chat():
             def stream_response():
                 for item in test_generator:
                     yield f"data: {json.dumps({'answer': item})}\n\n".encode('utf-8')
+                    time.sleep(1)
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
             if isinstance(response, str):
