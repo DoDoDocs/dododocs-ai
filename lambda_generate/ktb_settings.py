@@ -36,7 +36,7 @@ CHROMA_PATH = config.get('chroma_path', '/mnt/chroma_DB')
 GPT_MAX_TOKENS = config.get('gpt_max_tokens', 120000)
 MAX_RETRIES = 1  # config.get('max_retries', 2)  # 최대 재시도 횟수
 RETRY_DELAY = config.get('retry_delay', 3)  # 재시도 간격 (초)
-INCLUDE_TEST = False  # config.get('include_test', False)
+INCLUDE_TEST = config.get('include_test', False)
 BUCKET_NAME = config.get('bucket_name', 'haon-dododocs')
 
 
