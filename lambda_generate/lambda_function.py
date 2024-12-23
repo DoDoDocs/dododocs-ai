@@ -114,26 +114,6 @@ def clear_tmp_directory():
         logger.error(f"Error clearing /tmp directory: {str(e)}")
 
 
-def clear_tmp_directory():
-    """/tmp 디렉토리 내의 모든 파일을 삭제합니다."""
-    tmp_dir = "/tmp"
-    try:
-        if os.path.exists(tmp_dir):
-            for filename in os.listdir(tmp_dir):
-                file_path = os.path.join(tmp_dir, filename)
-                try:
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                except Exception as e:
-                    logger.error(
-                        f"Error deleting file/directory {file_path}: {str(e)}")
-            logger.info(f"Successfully cleared /tmp directory")
-    except Exception as e:
-        logger.error(f"Error clearing /tmp directory: {str(e)}")
-
-
 async def generate(request):
     """문서 및 README 생성 작업 수행"""
     # attempt = 0

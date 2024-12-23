@@ -163,29 +163,34 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                     if file_path.is_file():
                         all_file_paths.append(file_path)
 
-        batch_size = 30  # 배치 크기 설정
-        for file_path in all_file_paths:
-            if file_path in processed_files:
-                print(f"Skipping already processed file: {str(file_path)}")
-                continue
-            file_metadata = {
-                "filename": file_path.name,
-                "path": str(file_path),
-                "repository": str(db_name)
-            }
-            chunk_data_list = await process_file(
-                file_path, vector_store, file_metadata)
-            if chunk_data_list:
-                documents = [item["document"] for item in chunk_data_list]
-                metadatas = [item["metadata"] for item in chunk_data_list]
-                ids = [item["id"] for item in chunk_data_list]
+        batch_size = 50  # 배치 크기 설정
+        for i in range(0, len(all_file_paths), batch_size):
+            batch_paths = all_file_paths[i:i + batch_size]
+            batch_chunk_data = []
+            for file_path in batch_paths:
+                if file_path in processed_files:
+                    print(f"Skipping already processed file: {str(file_path)}")
+                    continue
+                file_metadata = {
+                    "filename": file_path.name,
+                    "path": str(file_path),
+                    "repository": str(db_name)
+                }
+                chunk_data_list = await process_file(
+                    file_path, vector_store, file_metadata)
+                if chunk_data_list:
+                    batch_chunk_data.extend(chunk_data_list)
+                    processed_files.add(file_path)
+            if batch_chunk_data:
+                documents = [item["document"] for item in batch_chunk_data]
+                metadatas = [item["metadata"] for item in batch_chunk_data]
+                ids = [item["id"] for item in batch_chunk_data]
                 vector_store.upsert(
                     documents=documents,
                     metadatas=metadatas,
                     ids=ids
                 )
-                total_files_processed += len(chunk_data_list)
-                processed_files.add(file_path)
+                total_files_processed += len(batch_chunk_data)
 
         if total_files_processed == 0:
             print("No valid files were processed")
@@ -194,7 +199,9 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
             return 0
 
         total_chunks = vector_store.count()
+        print(f"Successfully processed {total_files_processed} files with total {
+              total_chunks} chunks in {db_name}")
         return total_chunks
     except Exception as e:
-        print(f"Error adding data to DB: {str(e)}")
+        logger.error(f"Error adding data to DB: {str(e)}")
         raise
