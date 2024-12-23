@@ -26,11 +26,13 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
         repo_path = Path(path)
         total_files_processed = 0
         processed_files = set()
+        logger.info(f"repo_path: {repo_path}")
 
         def process_file(file_path: Path, vector_store, file_metadata) -> int:
             """파일을 처리하고 벡터 스토어에 추가, 이미 처리된 파일은 건너뜁니다."""
             if file_path in processed_files:
-                logger.info(f"Skipping already processed file: {file_path}")
+                logger.info(f"Skipping already processed file: {
+                            str(file_path)}")
                 return 0
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
@@ -38,11 +40,11 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                     if doc.strip():
                         chunks = embedding_chunker.chunk(doc)
                         logger.info(f"file path : {
-                                    file_path}, chunks size : {len(chunks)}")
+                                    str(file_path)}, chunks size : {len(chunks)}")
                         if chunks:
                             chunk_contents = [
-                                chunk.text.replace('\n', ' ').strip()
-                                for chunk in chunks if chunk.text.strip()
+                                str(chunk.text).replace('\n', ' ').strip()
+                                for chunk in chunks if chunk.text
                             ]
                             if chunk_contents:
                                 chunk_ids = [
@@ -61,8 +63,13 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                                 )
                                 processed_files.add(file_path)
                                 return len(chunk_contents)
+
+            except UnicodeDecodeError as e:
+                logger.error(f"Unicode decode error in file {
+                             str(file_path)}: {str(e)}")
             except Exception as e:
-                logger.error(f"Error processing file {file_path}: {str(e)}")
+                logger.error(f"Error processing file {
+                             str(file_path)}: {str(e)}")
             return 0
 
         for root, _, files in os.walk(repo_path):
@@ -77,15 +84,14 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                             "path": str(file_path),
                             "repository": str(db_name) if not isinstance(db_name, str) else db_name
                         }
-                        process_file(file_path, vector_store, file_metadata)
-                        # chunks_added = process_file(
-                        #     file_path, vector_store, file_metadata)
-        #                 if chunks_added > 0:
-        #                     total_files_processed += chunks_added
+                        chunks_added = process_file(
+                            file_path, vector_store, file_metadata)
+                        if chunks_added > 0:
+                            total_files_processed += chunks_added
 
-        # if total_files_processed == 0:
-        #     logger.error("No valid files were processed")
-        #     return 0
+        if total_files_processed == 0:
+            logger.error("No valid files were processed")
+            return 0
 
         total_chunks = vector_store.count()
         print(f"Successfully processed {total_files_processed} files with total {

@@ -53,7 +53,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
             logger.error("문서 또는 README 생성 실패")
             raise Exception("문서 또는 README 생성 실패")
 
-        await add_data_to_db(f"{repo_name}_generated", clone_dir+"/"+branch_name, [".md"])
+        await add_data_to_db(f"{repo_name}_generated", f"{clone_dir}/dododocs", [".md"])
 
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}, problem: {e}")
@@ -165,8 +165,8 @@ async def generate(request):
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"total files : {len(file_types)}")
         source_db_task = asyncio.create_task(
-            add_data_to_db(f"{repo_name}_source", clone_dir +
-                           "/"+{branch_name}, file_types)
+            add_data_to_db(f"{repo_name}_source", f"{
+                           clone_dir}/{repo_name}", file_types)
         )
         tasks.append(source_db_task)
         await asyncio.gather(*tasks)
