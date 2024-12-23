@@ -27,7 +27,7 @@ s3 = boto3.client('s3')
 
 
 async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
-                                  docs_key, include_test, korean, blocks, metadata, branch_name):
+                                  docs_key, include_test, korean, blocks, metadata):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
@@ -76,7 +76,7 @@ async def process_docs(directory_path: dict[str, list], output_directory: str, d
 def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
-        user_name, repo_name, branch_name = parse_repo_url(repo_url)
+        user_name, repo_name, source_path = parse_repo_url(repo_url)
         current_directory = '/tmp'
         repo_path = os.path.join(current_directory, f"{repo_name}.zip")
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
@@ -87,7 +87,7 @@ def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
 
         logger.info(f"Repository extraction completed: {clone_dir}")
 
-        return repo_path, clone_dir, repo_name, user_name, branch_name
+        return repo_path, clone_dir, repo_name, user_name, source_path
 
     except Exception as e:
         logger.error(f"Repository preparation failed: {str(e)}")
@@ -139,7 +139,7 @@ async def generate(request):
     # attempt = 0
     try:
         print(f"request: {request}")
-        repo_dir, clone_dir, repo_name, user_name, branch_name = prepare_repository(
+        repo_dir, clone_dir, repo_name, user_name, source_path = prepare_repository(
             request['repo_url'],
             request['s3_key']
         )
@@ -147,7 +147,7 @@ async def generate(request):
         logger.info(f"clone_dir: {clone_dir}, type: {type(clone_dir)}")
         logger.info(f"repo_name: {repo_name}, type: {type(repo_name)}")
         logger.info(f"user_name: {user_name}, type: {type(user_name)}")
-        logger.info(f"branch_name: {branch_name}, type: {type(branch_name)}")
+        logger.info(f"branch_name: {source_path}, type: {type(source_path)}")
 
         java_files_path = file_utils.find_files(clone_dir, (".java",))
         has_java_files = len(java_files_path) > 0
@@ -159,14 +159,14 @@ async def generate(request):
         tasks.append(asyncio.create_task(
             perform_full_generation(
                 request['repo_url'], clone_dir, repo_name, request['readme_key'],
-                request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata, branch_name)
+                request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
         ))
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"total files : {len(file_types)}")
         source_db_task = asyncio.create_task(
             add_data_to_db(f"{repo_name}_source", f"{
-                           clone_dir}/{repo_name}", file_types)
+                           clone_dir}/{source_path}", file_types)
         )
         tasks.append(source_db_task)
         await asyncio.gather(*tasks)

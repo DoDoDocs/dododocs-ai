@@ -58,7 +58,8 @@ def parse_repo_url(repo_url):
     parts = repo_url.rstrip('/').split('/')
     user_name = parts[-3]
     repo_with_branch = parts[-2]+'_'+parts[-1]
-    return user_name, repo_with_branch, parts[-1]
+    source_path = parts[-2]+'-'+parts[-1]
+    return user_name, repo_with_branch, source_path
 
 
 def download_zip_from_s3(BUCKET_NAME, object_key, download_path):
