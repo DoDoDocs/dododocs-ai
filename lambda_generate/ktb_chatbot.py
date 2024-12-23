@@ -50,7 +50,10 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                                     for i in range(len(chunk_contents))
                                 ]
                                 chunk_metadatas = [
-                                    file_metadata for _ in range(len(chunk_contents))]
+                                    {k: str(v)
+                                     for k, v in file_metadata.items()}
+                                    for _ in range(len(chunk_contents))
+                                ]
                                 vector_store.upsert(
                                     documents=chunk_contents,
                                     metadatas=chunk_metadatas,
@@ -58,37 +61,6 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                                 )
                                 processed_files.add(file_path)
                                 return len(chunk_contents)
-                        # else:
-                        #     if len(tiktoken.encoding_for_model(EMBEDDING_MODEL).encode(doc)) <= 8191:
-                        #         vector_store.upsert(
-                        #             documents=[doc.replace('\n', ' ').strip()],
-                        #             metadatas=[file_metadata],
-                        #             ids=[f"{file_path}"]
-                        #         )
-                        #         processed_files.add(file_path)
-                        #         return 1
-                        #     else:
-                        #         max_chunk_size = 8192
-                        #         overlap_size = 100
-                        #         chunks = [
-                        #             doc[i:i + max_chunk_size]
-                        #             for i in range(0, len(doc), max_chunk_size - overlap_size)
-                        #         ]
-                        #         chunk_ids = [
-                        #             f"{file_path}_{i}"
-                        #             for i in range(len(chunks))
-                        #         ]
-                        #         chunk_metadatas = [
-                        #             file_metadata for _ in range(len(chunks))]
-                        #         vector_store.upsert(
-                        #             documents=chunks,
-                        #             metadatas=chunk_metadatas,
-                        #             ids=chunk_ids
-                        #         )
-                        #         processed_files.add(file_path)
-                        #         print(f"Successfully processed file: {
-                        #               file_metadata['filename']} - Added {len(chunks)} chunks")
-                        #         return len(chunks)
 
             except UnicodeDecodeError as e:
                 logger.error(f"Unicode decode error in file {
@@ -107,7 +79,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                         file_metadata = {
                             "filename": filename,
                             "path": str(file_path),
-                            "repository": db_name
+                            "repository": str(db_name) if not isinstance(db_name, str) else db_name
                         }
                         chunks_added = process_file(
                             file_path, vector_store, file_metadata)

@@ -24,12 +24,12 @@ file_utils = FileUtils()
 s3 = boto3.client('s3')
 
 
-async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, docs_key, include_test, korean, blocks, metadata):
+async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, docs_key, include_test, korean, blocks, metadata, branch_name):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
         java_categories = check_service_annotation(
-            java_files_path)
+            java_files_path, include_test)
 
         tasks = []
         readme_task = asyncio.create_task(doc_processor.process_readme(
@@ -50,7 +50,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, do
             logger.error("문서 또는 README 생성 실패")
             raise Exception("문서 또는 README 생성 실패")
 
-        await add_data_to_db(f"{repo_name}_generated", clone_dir, [".md"])
+        await add_data_to_db(f"{repo_name}_generated", clone_dir+"/"+branch_name, [".md"])
 
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}")
@@ -68,12 +68,6 @@ async def process_docs(directory_path: dict[str, list], output_directory: str, d
     except Exception as doc_error:
         logger.error(f"문서 생성 중 오류 발생: {str(doc_error)}")
         return False
-
-
-async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
-    """백그라운드 작업을 수행하고 완료되면 cleanup 실행"""
-    await asyncio.gather(*tasks)
-    await async_cleanup(*cleanup_args)
 
 
 def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
@@ -165,8 +159,6 @@ async def generate(request):
         )
         tasks.append(source_db_task)
 
-        await perform_tasks_and_cleanup(tasks, (
-            repo_dir, clone_dir, "/tmp/Docs.zip"), f"{repo_name}_generated", clone_dir+"/dododocs")
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}")
 
