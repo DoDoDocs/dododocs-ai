@@ -5,6 +5,8 @@ import os
 from typing import Tuple
 import boto3
 import requests
+import time
+
 
 from ktb_document_processor import DocumentProcessor
 from ktb_api_client import APIClient
@@ -148,7 +150,7 @@ async def generate(request):
         tasks = []
         tasks.append(asyncio.create_task(
             perform_full_generation(
-                request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata,)
+                request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata, branch_name)
         ))
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
@@ -158,9 +160,11 @@ async def generate(request):
                            "/"+{branch_name}, file_types)
         )
         tasks.append(source_db_task)
-
+        await asyncio.gather(*tasks)
+        return True
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}")
+        return False
 
 
 def lambda_handler(event, context):
@@ -211,15 +215,23 @@ def lambda_handler(event, context):
             'blocks': blocks,
             's3_key': s3_key
         }
-        asyncio.run(generate(request))
-
-        # 챗봇 준비 완료 백엔드 호출 함수 생성
-        url = "https://dododocs.com/api/register/status/chatbot"
-        body = {
-            "repoUrl": repo_url,
-            "chatbotCompleted": True
-        }
-
+        MAX_RETRIES = 2
+        attempt = 0
+        result = asyncio.run(generate(request))
+        if result:
+            # 챗봇 준비 완료 백엔드 호출 함수 생성
+            url = "https://dododocs.com/api/register/status/chatbot"
+            body = {
+                "repoUrl": repo_url,
+                "chatbotCompleted": True
+            }
+        else:
+            while attempt < MAX_RETRIES:
+                result = asyncio.run(generate(request))
+                attempt += 1
+                if result:
+                    break
+                time.sleep(1)
         response = requests.put(url, json=body)
         logger.info(f"response: {response}, response.status_code: {
                     response.status_code}, response.json(): {response.json()}")
