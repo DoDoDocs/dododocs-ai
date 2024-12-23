@@ -73,7 +73,7 @@ def chat():
 
         # 크리스마스 이스터에그
         if query == "!christmas":
-            return jsonify({'answer': is_christmas()}), 200
+            return jsonify(is_christmas()), 200
 
         if chat_history:
             chat_history_list = []
