@@ -6,6 +6,7 @@ from ktb_settings import *
 from ktb_chatbot import *
 from ktb_func import *
 from flask_cors import CORS
+import json
 import time
 
 
@@ -45,15 +46,30 @@ def is_christmas():
 def chat():
     """채팅 엔드포인트"""
     try:
-        data = request.get_json()
-        logger.error(f"Received data: {data}")
-        if not data or not data.get('query'):
-            return jsonify({"detail": "Query cannot be empty"}), 400
+        if request.method == 'POST':
+            data = request.get_json()
+            if not data or not data.get('query'):
+                return jsonify({"detail": "Query cannot be empty"}), 400
+            repo_url = data.get('repo_url')
+            query = data.get('query')
+            chat_history = data.get('chat_history')
+            stream = data.get('stream', True)
+        elif request.method == 'GET':
+            query = request.args.get('query')
+            repo_url = request.args.get('repo_url')
+            chat_history = request.args.get('chat_history')
+            stream = request.args.get('stream', True)
+            if not query:
+                return jsonify({"detail": "Query cannot be empty"}), 400
+            if chat_history:
+                try:
+                    chat_history = json.loads(chat_history)
+                except json.JSONDecodeError:
+                    return jsonify({"detail": "Invalid chat_history format"}), 400
+        else:
+            return jsonify({"detail": "Method not allowed"}), 405
 
-        repo_url = data.get('repo_url')
-        query = data.get('query')
-        chat_history = data.get('chat_history')
-        stream = data.get('stream', True)
+        logger.error(f"Received data: {data}")
 
         # 크리스마스 이스터에그
         if query == "!christmas":
@@ -79,47 +95,30 @@ def chat():
                 chat_history=chat_history,
                 stream=stream
             )
-        test_generator = {
-            "test1",
-            "test2",
-            "test3",
-            "test4",
-            "test5",
-        }
-        # if stream:
-        #     test_generator = ["test1", "test2", "test3", "test4", "test5"]
-
-        #     def stream_response():
-        #         for item in test_generator:
-        #             yield f"data: {json.dumps({'answer': item})}\n\n".encode('utf-8')
-        #             time.sleep(0.5)
-        #     return Response(stream_with_context(stream_response()), content_type='text/event-stream')
-        # else:
-        #     if isinstance(response, str):
-        #         return jsonify({'answer': response}), 200
-        #     else:
-        #         full_response = "".join(response)
-        #         logger.info(f"response: {full_response}")
-        #         return jsonify({'answer': full_response}), 200
 
         if stream:
             def stream_response():
                 if isinstance(response, str):
-                    yield f"{response}".encode('utf-8')
+                    yield f"data: {response}\n\n".encode('utf-8')
                 else:
                     chunk_buffer = ""
                     for chunk in response:
-                        chunk_buffer += chunk
+                        chunk_buffer += chunk.replace('\n', ' ')
                         if len(chunk_buffer) > 200:
                             logger.info(f"chunk_buffer: {chunk_buffer}")
-                            yield f"data: {chunk_buffer}".encode('utf-8')
-                            time.sleep(0.1)
+                            yield f"data: {chunk_buffer}\n\n".encode('utf-8')
+                            time.sleep(1)
                             chunk_buffer = ""
-                    yield f"data: {chunk_buffer}".encode('utf-8')
+                    if chunk_buffer:
+                        yield f"data: {chunk_buffer}\n\n".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
-            logger.info(f"response: {response}")
-            return jsonify({'answer': response}), 200
+            if isinstance(response, str):
+                return jsonify({'answer': response}), 200
+            else:
+                full_response = "".join(response)
+                logger.info(f"response: {full_response}")
+                return jsonify({'answer': full_response}), 200
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
