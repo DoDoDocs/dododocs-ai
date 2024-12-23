@@ -148,7 +148,7 @@ async def generate(request):
         tasks = []
         tasks.append(asyncio.create_task(
             perform_full_generation(
-                request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
+                request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata,)
         ))
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
@@ -214,7 +214,7 @@ def lambda_handler(event, context):
         asyncio.run(generate(request))
 
         # 챗봇 준비 완료 백엔드 호출 함수 생성
-        url = "https://43.200.171.249/api/register/status/chatbot"
+        url = "https://dododocs.com/api/register/status/chatbot"
         body = {
             "repoUrl": repo_url,
             "chatbotCompleted": True
