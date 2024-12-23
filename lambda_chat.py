@@ -110,10 +110,10 @@ def chat():
                     chunk_buffer = ""
                     for chunk in response:
                         chunk_buffer += chunk
-                        if len(chunk_buffer) > 100:
+                        if len(chunk_buffer) > 200:
                             logger.info(f"chunk_buffer: {chunk_buffer}")
                             yield f"data: {chunk_buffer}".encode('utf-8')
-                            # time.sleep(0.5)
+                            time.sleep(0.1)
                             chunk_buffer = ""
                     yield f"data: {chunk_buffer}".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
