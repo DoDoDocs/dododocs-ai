@@ -29,7 +29,8 @@ SEED = config.get('seed', 213)
 TOP_LOGPROBS = config.get('top_logprobs', 5)
 EMBEDDING_MODEL = config.get('embedding_model_name', 'text-embedding-3-small')
 DISTANCE_TYPE = config.get('distance_type', 'inner_product')
-CHROMA_PATH = config.get('chroma_path', '/mnt/chroma_DB/db')
+CHROMA_PATH = config.get('chroma_path', '/mnt/chroma_DB')
+
 
 if MODEL.startswith('gpt' or 'claude'):
     MAX_TOKENS_PER_BATCH = 1500000
@@ -50,10 +51,10 @@ elif DISTANCE_TYPE == "inner_product":
     DISTANCE = {"hnsw:space": "ip"}
 else:
     DISTANCE = {"hnsw:space": "l2"}
-    
+
 if not os.path.exists(CHROMA_PATH):
     print("no directory path")
-else :
+else:
     print("path exists")
 
 # ChromaDB 클라이언트 초기화
@@ -62,7 +63,6 @@ try:
     print("ChromaDB client initialized successfully.")
 except Exception as e:
     print(f"Failed to initialize ChromaDB client: {e}")
-
 
 
 def get_openai_client():
