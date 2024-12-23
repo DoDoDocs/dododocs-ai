@@ -18,10 +18,6 @@ jobs:
       id: vars
       run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-    - name: Create .env file from GitHub Secrets
-      run: |
-        echo "${{ secrets.ENV_FILE }}" > .env
-
     - name: DockerHub 로그인
       uses: docker/login-action@v2
       with:
@@ -33,3 +29,17 @@ jobs:
         echo "Using commit hash: ${{ env.COMMIT_HASH }}"
         docker build -t ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }} .
         docker push ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
+
+
+    - name: Create .env file from GitHub Secrets
+      run: |
+        echo "${{ secrets.ENV_FILE }}" > .env
+
+    - name: EC2 배포
+      uses: appleboy/ssh-action@master
+      with:
+        host: 43.200.171.249
+        username: ec2-user  # 또는 EC2 인스턴스에 맞는 사용자 이름
+        key: ${{ secrets.EC2_PRIVATE_KEY }} # EC2 인스턴스에 접속하기 위한 SSH Private Key를 GitHub Secrets에 등록하세요.
+        script: |
+          docker run -d --name dododocs-ai --env-file .env -p 80:5001 -v /home/ec2-user/ai-gen:/mnt/chroma_DB ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
