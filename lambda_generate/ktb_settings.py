@@ -8,6 +8,20 @@ import os
 import google.generativeai as genai
 from token_chunker import TokenChunker
 import json
+from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
+from typing import Mapping, Optional, cast, List
+import logging
+from chromadb import *
+from openai import OpenAI
+import chromadb
+from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+import boto3
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+import tiktoken
+from token_chunker import TokenChunker
+import requests
 
 
 def load_config(config_path: str) -> dict:
@@ -162,3 +176,34 @@ s3 = boto3.client(
 
 
 print(chroma_client.list_collections())
+
+
+class SelfEmbeddingFunction(EmbeddingFunction[List[str]]):
+    def __init__(self, timeout: int = 80):
+        self.timeout = timeout
+
+    def __call__(self, texts: List[str]) -> Embeddings:
+        try:
+            url = "https://api.openai.com/v1/embeddings"
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": EMBEDDING_MODEL,
+                "input": texts
+            }
+            response = requests.post(url, headers=headers,
+                                     json=payload, timeout=self.timeout)
+            response.raise_for_status()
+            data = response.json()
+            return [item['embedding'] for item in data['data']]
+        except requests.exceptions.Timeout:
+            print("Request timed out.")
+            return []
+        except Exception as e:
+            print(f"Error generating embeddings: {e}")
+            return []
+
+
+embedding_func = SelfEmbeddingFunction(timeout=60)

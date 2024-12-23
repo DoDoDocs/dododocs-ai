@@ -146,7 +146,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
     try:
         vector_store = chroma_client.get_or_create_collection(
             name=db_name,
-            embedding_function=self_embedding_function(),
+            embedding_function=embedding_func,
             metadata=DISTANCE
         )
         repo_path = Path(path)
