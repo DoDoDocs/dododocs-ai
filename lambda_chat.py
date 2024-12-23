@@ -93,6 +93,7 @@ def chat():
                     yield f"{chunk_buffer}".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
+            logger.info(f"response: {response}")
             return jsonify({'answer': response}), 200
 
     except Exception as error:
