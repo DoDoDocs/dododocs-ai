@@ -42,7 +42,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
         doc_dir = os.path.join(clone_dir, "dododocs")
         if java_categories:
             docs_task = asyncio.create_task(process_docs(
-                java_categories, doc_dir, docs_key, korean, metadata))
+                java_categories, doc_dir, docs_key, korean, clone_dir, metadata))
             tasks.append(docs_task)
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -59,10 +59,10 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
         logger.error(f"문서 및 README 생성 오류: {str(e)}, problem: {e}")
 
 
-async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool, metadata: dict = None) -> bool:
+async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool, clone_dir: str, metadata: dict = None) -> bool:
     """문서 생성 및 요약 처리"""
     try:
-        await doc_processor.generate_docs(directory_path, output_directory, korean)
+        await doc_processor.generate_docs(directory_path, output_directory, korean, clone_dir)
         await doc_processor.summarize_docs_async_nogenerate(output_directory, korean)
         # await doc_processor.summarize_docs_async(output_directory, korean)
         create_zip(output_directory, "/tmp/Docs.zip")

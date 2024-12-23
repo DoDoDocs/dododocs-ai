@@ -630,7 +630,7 @@ class DocumentProcessor:
     async def generate_text_async(self, session=None, prompt=None, contents=None):
         """비동기 텍스트 생성"""
         if session:
-            return await self.api_client.generate_text(prompt, contents)
+            return await self.api_client.generate_text(session, prompt, contents)
         else:
             return await self.api_client.generate_text_client(prompt, contents)
 
@@ -659,11 +659,10 @@ class DocumentProcessor:
             print(f"청크 처리 중 오류: {str(e)}")
             return None
 
-    async def generate_docs(self, directory_path: dict[str, list], output_directory: str, korean: bool):
+    async def generate_docs(self, directory_path: dict[str, list], output_directory: str, korean: bool, clone_dir: str):
         """문서만 생성"""
         try:
-            io_pool = ThreadPoolExecutor(
-                max_workers=multiprocessing.cpu_count() * 2)
+            timeout = aiohttp.ClientTimeout(total=120)
             # 한국어/영어에 따른 프롬프트 정의
             prompts = {
                 'Controller': NEW_PROMPT_ARCHITECTURE_DOC_KOREAN if korean else NEW_PROMPT_ARCHITECTURE_DOC,
@@ -681,31 +680,26 @@ class DocumentProcessor:
                     for filename, content in zip(files, code_contents)
                 ])
 
-            chunk_size = 40
+            chunk_size = 30
+            print(" generate docs task size: ", len(all_tasks))
             for i in range(0, len(all_tasks), chunk_size):
+                results = []
                 chunk = all_tasks[i:i + chunk_size]
 
-                tasks = [
-                    self.api_client.generate_text(
-                        prompts[category], content)
-                    for category, _, content in chunk
-                ]
-                summaries = await asyncio.gather(*tasks)
-
-                save_tasks = [
-                    self._save_docs_async(
-                        category, filename, summary, output_directory, io_pool)
-                    for (category, filename, _), summary in zip(chunk, summaries)
-                ]
-                await asyncio.gather(*save_tasks)
-
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    tasks = [
+                        send_request(
+                            session, category, prompts[category], content, filename, clone_dir)
+                        for category, filename, content in chunk
+                    ]
+                    batch_results = await asyncio.gather(*tasks)
+                    results.extend(batch_results)
+                    await asyncio.sleep(1)  # 배치 간 딜레이 추가
             return output_directory
 
         except Exception as e:
             logger.error(f"문서 생성 실패: {str(e)}")
             return None
-        finally:
-            io_pool.shutdown()
 
     def categorize_files(self, directory):
         """각 카테고리 폴더(Service, Controller, Test) 내의 파일들을 분류"""
@@ -872,3 +866,59 @@ class DocumentProcessor:
                 print(f"{category}_summary.md 파일 생성 완료: {output_path}")
             except Exception as e:
                 logger.error(f"{category}_summary.md 파일 생성 오류: {str(e)}")
+
+
+# OpenAI API 설정
+ENDPOINT = "https://api.openai.com/v1/chat/completions"
+
+# 요청 데이터 준비
+HEADERS = {
+    "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+    "Content-Type": "application/json"
+}
+
+
+async def send_request(session, category, prompt, content, filename, clone_dir, retries=3, delay=1):
+    """GPT 요청을 보내고 에러 발생 시 재시도"""
+    print("send_request :", filename)
+    payload = {
+        "model": GPT_MODEL,
+        "messages": [{"role": "system", "content": prompt},
+                     {"role": "user", "content": content}]
+    }
+    for attempt in range(retries):
+        try:
+            async with session.post(ENDPOINT, headers=HEADERS, json=payload) as response:
+                if response.status == 200:
+                    data = await response.json()  # 성공적으로 응답을 받음
+
+                    # 파일 이름 추출
+                    file_name_only = os.path.basename(filename)
+                    # 파일 이름 생성 및 저장
+                    md_filename = os.path.join(
+                        clone_dir, "dododocs", category, f"{file_name_only}.md")
+                    os.makedirs(os.path.dirname(md_filename), exist_ok=True)
+
+                    async with aiofiles.open(md_filename, "w", encoding="utf-8") as file:
+                        content = data.get("choices", [{}])[0].get(
+                            "message", {}).get("content", "No response")
+                        await file.write(content)
+                    return content
+                else:
+                    # API 서버에서 반환된 에러 처리
+                    error_text = await response.text()
+                    print(f"Error for filename '{filename}': {
+                          error_text} (status: {response.status})")
+                    return {"error": error_text, "status": response.status}
+        except aiohttp.ClientError as e:
+            print(f"ClientError for filename '{filename}': {e}")
+        except asyncio.exceptions.TimeoutError:
+            print(f"TimeoutError for filename '{filename}'")
+        except BrokenPipeError:
+            print(f"BrokenPipeError for filename '{filename}'")
+
+        # 재시도 대기
+        if attempt < retries - 1:
+            print(f"Retrying filename '{filename}' after {delay} seconds...")
+            await asyncio.sleep(delay)
+    return {"error": "Failed after retries", "filename": filename}
