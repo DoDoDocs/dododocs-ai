@@ -630,7 +630,7 @@ class DocumentProcessor:
     async def generate_text_async(self, session=None, prompt=None, contents=None):
         """비동기 텍스트 생성"""
         if session:
-            return await self.api_client.generate_text(session, prompt, contents)
+            return await self.api_client.generate_text(prompt, contents)
         else:
             return await self.api_client.generate_text_client(prompt, contents)
 
