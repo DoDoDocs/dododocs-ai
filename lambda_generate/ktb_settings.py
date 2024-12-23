@@ -129,9 +129,6 @@ chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 embedding_function = OpenAIEmbeddingFunction(
     api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
 
-embedding_function_client = OpenAI_client.embeddings.create(
-    model=EMBEDDING_MODEL
-)
 # S3 클라이언트 생성
 s3 = boto3.client(
     's3'
