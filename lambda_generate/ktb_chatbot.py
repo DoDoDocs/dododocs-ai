@@ -39,6 +39,8 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                     if doc.strip():
                         # if file_path.suffix == '.md':
                         chunks = embedding_chunker.chunk(doc)
+                        logger.info(f"file path : {
+                                    file_path}, chunks size : {len(chunks)}")
                         if chunks:
                             chunk_contents = [
                                 chunk.text.replace('\n', ' ').strip()
