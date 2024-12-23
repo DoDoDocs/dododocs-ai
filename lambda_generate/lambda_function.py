@@ -79,7 +79,7 @@ async def perform_tasks_and_cleanup(tasks, cleanup_args, db_name, clone_dir):
 def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
-        user_name, repo_name = parse_repo_url(repo_url)
+        user_name, repo_name, branch_name = parse_repo_url(repo_url)
         current_directory = '/tmp'
         repo_path = os.path.join(current_directory, f"{repo_name}.zip")
         clone_dir = os.path.join(current_directory, f"{user_name}_{repo_name}")
@@ -90,7 +90,7 @@ def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
 
         logger.info(f"Repository extraction completed: {clone_dir}")
 
-        return repo_path, clone_dir, repo_name, user_name
+        return repo_path, clone_dir, repo_name, user_name, branch_name
 
     except Exception as e:
         logger.error(f"Repository preparation failed: {str(e)}")
@@ -141,7 +141,7 @@ async def generate(request):
     """문서 및 README 생성 작업 수행"""
     # attempt = 0
     try:
-        repo_dir, clone_dir, repo_name, user_name = prepare_repository(
+        repo_dir, clone_dir, repo_name, user_name, branch_name = prepare_repository(
             request['repo_url'],
             request['s3_key']
         )
@@ -160,7 +160,8 @@ async def generate(request):
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"total files : {len(file_types)}")
         source_db_task = asyncio.create_task(
-            add_data_to_db(f"{repo_name}_source", clone_dir, file_types)
+            add_data_to_db(f"{repo_name}_source", clone_dir +
+                           "/"+{branch_name}, file_types)
         )
         tasks.append(source_db_task)
 

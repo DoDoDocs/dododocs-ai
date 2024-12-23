@@ -27,17 +27,15 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
         total_files_processed = 0
         processed_files = set()
 
-        async def process_file(file_path: Path, vector_store, file_metadata) -> int:
+        def process_file(file_path: Path, vector_store, file_metadata) -> int:
             """파일을 처리하고 벡터 스토어에 추가, 이미 처리된 파일은 건너뜁니다."""
             if file_path in processed_files:
                 logger.info(f"Skipping already processed file: {file_path}")
                 return 0
-
             try:
-                async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
-                    doc = await file.read()
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    doc = file.read()
                     if doc.strip():
-                        # if file_path.suffix == '.md':
                         chunks = embedding_chunker.chunk(doc)
                         logger.info(f"file path : {
                                     file_path}, chunks size : {len(chunks)}")
@@ -111,7 +109,8 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                             "path": str(file_path),
                             "repository": db_name
                         }
-                        chunks_added = await process_file(file_path, vector_store, file_metadata)
+                        chunks_added = process_file(
+                            file_path, vector_store, file_metadata)
                         if chunks_added > 0:
                             total_files_processed += chunks_added
 
