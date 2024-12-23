@@ -90,7 +90,7 @@ class APIClient:
                         "https://api.openai.com/v1/chat/completions",
                         json=json_data,
                         headers=self._get_headers(),
-                        timeout=aiohttp.ClientTimeout(total=30)
+                        timeout=aiohttp.ClientTimeout(total=600)
                     ) as response:
                         response.raise_for_status()
                         response_json = await response.json()
