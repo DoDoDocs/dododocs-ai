@@ -151,8 +151,7 @@ async def generate(request):
         # )
         # tasks.append(source_db_task)
         # await asyncio.gather(*tasks)
-        await add_data_to_db(f"{repo_name}_source", f"{
-            clone_dir}/{source_path}", file_types)
+        await add_data_to_db(f"{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
         return True
     except Exception as e:
         logger.error(f"generate 문서 및 README 생성 오류: {str(e)}")
@@ -230,7 +229,7 @@ def lambda_handler(event, context):
         #         }
         response = requests.put(url, json=body)
         logger.info(f"response: {response}, response.status_code: {
-                    response.status_code}, response.json(): {response.json()}")
+                    response.status_code}")
         return {
             "statusCode": 200,
             "body": json.dumps({"message": "All generation completed"})

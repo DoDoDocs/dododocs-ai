@@ -1,3 +1,4 @@
+import requests
 from openai import OpenAI
 import tiktoken
 import chromadb
@@ -128,6 +129,31 @@ chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
 embedding_function = OpenAIEmbeddingFunction(
     api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
+
+
+def self_embedding_function(texts: list[str], timeout: int = 80):
+    try:
+        url = "https://api.openai.com/v1/embeddings"
+        headers = {
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": EMBEDDING_MODEL,
+            "input": texts
+        }
+        response = requests.post(url, headers=headers,
+                                 json=payload, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+        return [item['embedding'] for item in data['data']]
+    except requests.exceptions.Timeout:
+        print("Request timed out.")
+        return []
+    except Exception as e:
+        print(f"Error generating embeddings: {e}")
+        return []
+
 
 # S3 클라이언트 생성
 s3 = boto3.client(
