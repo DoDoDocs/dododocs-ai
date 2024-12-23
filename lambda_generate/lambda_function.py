@@ -26,7 +26,8 @@ file_utils = FileUtils()
 s3 = boto3.client('s3')
 
 
-async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, docs_key, include_test, korean, blocks, metadata, branch_name):
+async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
+                                  docs_key, include_test, korean, blocks, metadata, branch_name):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
@@ -55,7 +56,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key, do
         await add_data_to_db(f"{repo_name}_generated", clone_dir+"/"+branch_name, [".md"])
 
     except Exception as e:
-        logger.error(f"문서 및 README 생성 오류: {str(e)}")
+        logger.error(f"문서 및 README 생성 오류: {str(e)}, problem: {e}")
 
 
 async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool, metadata: dict = None) -> bool:
@@ -137,10 +138,17 @@ async def generate(request):
     """문서 및 README 생성 작업 수행"""
     # attempt = 0
     try:
+        print(f"request: {request}")
         repo_dir, clone_dir, repo_name, user_name, branch_name = prepare_repository(
             request['repo_url'],
             request['s3_key']
         )
+        logger.info(f"repo_dir: {repo_dir}, type: {type(repo_dir)}")
+        logger.info(f"clone_dir: {clone_dir}, type: {type(clone_dir)}")
+        logger.info(f"repo_name: {repo_name}, type: {type(repo_name)}")
+        logger.info(f"user_name: {user_name}, type: {type(user_name)}")
+        logger.info(f"branch_name: {branch_name}, type: {type(branch_name)}")
+
         java_files_path = file_utils.find_files(clone_dir, (".java",))
         has_java_files = len(java_files_path) > 0
         logger.info(f"has_java_files: {has_java_files}")
@@ -150,7 +158,8 @@ async def generate(request):
         tasks = []
         tasks.append(asyncio.create_task(
             perform_full_generation(
-                request['repo_url'], clone_dir, repo_name, request['readme_key'], request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata, branch_name)
+                request['repo_url'], clone_dir, repo_name, request['readme_key'],
+                request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata, branch_name)
         ))
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
@@ -163,7 +172,7 @@ async def generate(request):
         await asyncio.gather(*tasks)
         return True
     except Exception as e:
-        logger.error(f"문서 및 README 생성 오류: {str(e)}")
+        logger.error(f"generate 문서 및 README 생성 오류: {str(e)}")
         return False
 
 
@@ -183,7 +192,7 @@ def lambda_handler(event, context):
         repo_url = metadata.get('repo_url')
         readme_key = metadata.get('readme_key')
         docs_key = metadata.get('docs_key')
-        include_test = metadata.get('include_test')
+        include_test = metadata.get('include_test', 'false').lower() == 'true'
         korean = metadata.get('korean', 'false').lower() == 'true'
 
         blocks = [
