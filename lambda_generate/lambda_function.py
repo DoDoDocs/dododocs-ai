@@ -214,7 +214,7 @@ def lambda_handler(event, context):
         asyncio.run(generate(request))
 
         # 챗봇 준비 완료 백엔드 호출 함수 생성
-        url = "https://dododocs.com/api/register/status/chatbot"
+        url = "https://43.200.171.249/api/register/status/chatbot"
         body = {
             "repoUrl": repo_url,
             "chatbotCompleted": True
