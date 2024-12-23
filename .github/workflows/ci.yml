@@ -51,4 +51,4 @@ jobs:
         script: |
           docker stop dododocs-ai || true
           docker rm dododocs-ai || true
-          docker run -d --name dododocs-ai --env-file /home/ec2-user/.env -p 80:5001 -v /home/ec2-user/ai-gen:/mnt/chroma_DB ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
+          docker run -d --name dododocs-ai --env-file /home/ec2-user/.env -p 80:5001 -v /home/ec2-user/ai-gen/db:/mnt/chroma_DB ${{ secrets.DOCKER_USERNAME }}/dododocs-ai:${{ env.COMMIT_HASH }}
