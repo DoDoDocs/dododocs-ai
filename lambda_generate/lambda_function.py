@@ -144,12 +144,15 @@ async def generate(request):
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"total files : {len(file_types)}")
-        source_db_task = asyncio.create_task(
-            add_data_to_db(f"{repo_name}_source", f"{
-                           clone_dir}/{source_path}", file_types)
-        )
-        tasks.append(source_db_task)
         await asyncio.gather(*tasks)
+        # source_db_task = asyncio.create_task(
+        #     add_data_to_db(f"{repo_name}_source", f"{
+        #                    clone_dir}/{source_path}", file_types)
+        # )
+        # tasks.append(source_db_task)
+        # await asyncio.gather(*tasks)
+        await asyncio.run(add_data_to_db(f"{repo_name}_source", f"{
+            clone_dir}/{source_path}", file_types))
         return True
     except Exception as e:
         logger.error(f"generate 문서 및 README 생성 오류: {str(e)}")
@@ -204,7 +207,7 @@ def lambda_handler(event, context):
             'blocks': blocks,
             's3_key': s3_key
         }
-        MAX_RETRIES = 2
+        MAX_RETRIES = 0
         attempt = 0
         result = asyncio.run(generate(request))
         if result:
@@ -221,6 +224,11 @@ def lambda_handler(event, context):
                 if result:
                     break
                 time.sleep(1)
+                url = "https://dododocs.com/api/register/status/chatbot"
+                body = {
+                    "repoUrl": repo_url,
+                    "chatbotCompleted": True
+                }
         response = requests.put(url, json=body)
         logger.info(f"response: {response}, response.status_code: {
                     response.status_code}, response.json(): {response.json()}")
