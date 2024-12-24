@@ -73,7 +73,7 @@ def chat():
 
         # 크리스마스 이스터에그
         if query == "!christmas":
-            return jsonify(is_christmas()), 200
+            return json.dumps(is_christmas()), 200
 
         if chat_history:
             chat_history_list = []
@@ -121,11 +121,11 @@ def chat():
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
             if isinstance(response, str):
-                return jsonify({'answer': response}), 200
+                return json.dumps({'answer': response}), 200
             else:
                 full_response = "".join(response)
                 logger.info(f"response: {full_response}")
-                return jsonify({'answer': full_response}), 200
+                return json.dumps({'answer': full_response}), 200
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)

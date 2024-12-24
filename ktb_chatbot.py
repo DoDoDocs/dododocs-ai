@@ -9,7 +9,8 @@ import tiktoken
 
 
 # 로깅 설정
-handler = RotatingFileHandler("app.log", maxBytes=5*1024*1024, backupCount=5)  # 5MB마다 회전, 최대 5개 백업
+handler = RotatingFileHandler(
+    "app.log", maxBytes=5*1024*1024, backupCount=5)  # 5MB마다 회전, 최대 5개 백업
 logging.basicConfig(
     level=logging.DEBUG,  # DEBUG 레벨로 설정
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -42,7 +43,8 @@ def db_search(query: str, db: Any, n_results: int = 3) -> Dict[str, Any]:
             n_results=n_results,
             include=["metadatas", "documents"]
         )
-        filenames = [metadata['filename'] for metadata in results['metadatas'][0]]
+        filenames = [metadata['filename']
+                     for metadata in results['metadatas'][0]]
         logger.info(f"filenames: {filenames}")
         return results, filenames
     except Exception as e:
@@ -56,7 +58,8 @@ def _build_context(retrieved_docs: Dict[str, Any], filenames: List[str]) -> str:
     if retrieved_docs and filenames:
         for i in range(len(retrieved_docs['documents'][0])):
             if 'filename' in retrieved_docs['metadatas'][0][i]:
-                context += f"\nFILENAME: {retrieved_docs['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {retrieved_docs['documents'][0][i]}\n"
+                context += f"\nFILENAME: {retrieved_docs['metadatas'][0][i]['filename']}\nFILE DOCUMENT : {
+                    retrieved_docs['documents'][0][i]}\n"
     return context
 
 
@@ -83,16 +86,23 @@ def generate_response(query: str, db_list: List[Any], chat_history: Optional[Lis
     """Generate a response using LLM based on retrieved documents."""
     try:
         if augmented_query:
-            retrieved_docs_source, filenames_source = db_search(augmented_query, db_list[0])
-            retrieved_docs_generated, filenames_generated = db_search(augmented_query, db_list[1], n_results=2)
+            retrieved_docs_source, filenames_source = db_search(
+                augmented_query, db_list[0])
+            retrieved_docs_generated, filenames_generated = db_search(
+                augmented_query, db_list[1], n_results=2)
         else:
-            retrieved_docs_source, filenames_source = db_search(query, db_list[0])
-            retrieved_docs_generated, filenames_generated = db_search(query, db_list[1], n_results=2)
+            retrieved_docs_source, filenames_source = db_search(
+                query, db_list[0])
+            retrieved_docs_generated, filenames_generated = db_search(
+                query, db_list[1], n_results=2)
 
-        source_context = _build_context(retrieved_docs_source, filenames_source)
-        generated_context = _build_context(retrieved_docs_generated, filenames_generated)
+        source_context = _build_context(
+            retrieved_docs_source, filenames_source)
+        generated_context = _build_context(
+            retrieved_docs_generated, filenames_generated)
 
-        full_prompt = _create_prompt(query, source_context, generated_context, chat_history)
+        full_prompt = _create_prompt(
+            query, source_context, generated_context, chat_history)
 
         client_gpt = get_openai_client()
         response = client_gpt.chat.completions.create(
@@ -101,9 +111,10 @@ def generate_response(query: str, db_list: List[Any], chat_history: Optional[Lis
             temperature=0.32,
             stream=False
         )
-        
+
         response_content = response.choices[0].message.content
-        logger.info(f"Generated response for query '{query}': {response_content}")
+        logger.info(f"Generated response for query '{
+                    query}': {response_content}")
 
         return response_content
 
@@ -116,16 +127,23 @@ def stream_response(query: str, db_list: List[Any], chat_history: Optional[List[
     """Generate a streaming response."""
     try:
         if augmented_query:
-            retrieved_docs_source, filenames_source = db_search(augmented_query, db_list[0])
-            retrieved_docs_generated, filenames_generated = db_search(augmented_query, db_list[1], n_results=2)
+            retrieved_docs_source, filenames_source = db_search(
+                augmented_query, db_list[0])
+            retrieved_docs_generated, filenames_generated = db_search(
+                augmented_query, db_list[1], n_results=2)
         else:
-            retrieved_docs_source, filenames_source = db_search(query, db_list[0])
-            retrieved_docs_generated, filenames_generated = db_search(query, db_list[1], n_results=2)
+            retrieved_docs_source, filenames_source = db_search(
+                query, db_list[0])
+            retrieved_docs_generated, filenames_generated = db_search(
+                query, db_list[1], n_results=2)
 
-        source_context = _build_context(retrieved_docs_source, filenames_source)
-        generated_context = _build_context(retrieved_docs_generated, filenames_generated)
+        source_context = _build_context(
+            retrieved_docs_source, filenames_source)
+        generated_context = _build_context(
+            retrieved_docs_generated, filenames_generated)
 
-        full_prompt = _create_prompt(query, source_context, generated_context, chat_history)
+        full_prompt = _create_prompt(
+            query, source_context, generated_context, chat_history)
 
         client_gpt = get_openai_client()
         response = client_gpt.chat.completions.create(
@@ -150,24 +168,28 @@ def codebase_chat(query: str, repo_url: str, chat_history: List[dict] = None, st
     """채팅 응답 생성"""
     try:
         user_name, repo_name = parse_repo_url(repo_url)
-        collection_list = [collection.name for collection in chroma_client.list_collections()]
+        collection_list = [
+            collection.name for collection in chroma_client.list_collections()]
         if f"{repo_name}_source" in collection_list and f"{repo_name}_generated" in collection_list:
-            vector_store_source = chroma_client.get_or_create_collection(
-                name=f"{repo_name}_source",
+            vector_store_source = chroma_client.get_collection(
+                name=f"{user_name}_{repo_name}_source",
                 embedding_function=get_embedding_function()
             )
-            vector_store_generated = chroma_client.get_or_create_collection(
-                name=f"{repo_name}_generated",
+            vector_store_generated = chroma_client.get_collection(
+                name=f"{user_name}_{repo_name}_generated",
                 embedding_function=get_embedding_function()
             )
         else:
-            error_msg = f"Collection {repo_name}_source or {repo_name}_generated does not exist"
+            error_msg = f"Collection {user_name}_{repo_name}_source or {
+                user_name}_{repo_name}_generated does not exist"
             logger.error(error_msg)
             raise Exception(error_msg)
         db_list = [vector_store_source, vector_store_generated]
         if chat_history:
-            total_content = ''.join([msg['content'] for msg in chat_history]) + query
-            total_tokens = len(tiktoken.encoding_for_model(GPT_MODEL).encode(total_content))
+            total_content = ''.join([msg['content']
+                                    for msg in chat_history]) + query
+            total_tokens = len(tiktoken.encoding_for_model(
+                GPT_MODEL).encode(total_content))
             last_message = chat_history[-1] if total_tokens > MAX_TOKEN_LENGTH else chat_history
         else:
             last_message = None
@@ -208,7 +230,8 @@ def query_augmentation(query: str, chat_history: Optional[List[dict]] = None) ->
 
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": f"Previous Query: {previous_query}\nPrevious Response: {previous_response}\nQuery: {query}"}
+        {"role": "user", "content": f"Previous Query: {
+            previous_query}\nPrevious Response: {previous_response}\nQuery: {query}"}
     ]
     client_gpt = get_openai_client()
     augmented_query = client_gpt.chat.completions.create(
@@ -219,6 +242,7 @@ def query_augmentation(query: str, chat_history: Optional[List[dict]] = None) ->
     )
 
     augmented_content = augmented_query.choices[0].message.content
-    logger.info(f"Augmented query for original query '{query}': {augmented_content}")
+    logger.info(f"Augmented query for original query '{
+                query}': {augmented_content}")
 
     return augmented_content
