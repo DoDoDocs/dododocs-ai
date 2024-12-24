@@ -274,8 +274,8 @@ class DocumentProcessor:
         }
 
         for root, _, files in os.walk(repo_dir):
-            if any(excl in root for excl in EXCLUDE_DIRS):
-                continue
+            # if any(excl in root for excl in EXCLUDE_DIRS):
+            #     continue
 
             for file in files:
                 ext = os.path.splitext(file)[1].lower()
