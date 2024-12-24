@@ -26,7 +26,7 @@ file_utils = FileUtils()
 s3 = boto3.client('s3')
 
 
-async def perform_full_generation(repo_url, clone_dir, user_name, repo_name, readme_key,
+async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
                                   docs_key, include_test, korean, blocks, metadata):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
@@ -138,7 +138,7 @@ async def generate(request):
         tasks = []
         tasks.append(asyncio.create_task(
             perform_full_generation(
-                request['repo_url'], clone_dir, user_name, repo_name, request['readme_key'],
+                request['repo_url'], clone_dir, repo_name, request['readme_key'],
                 request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
         ))
 
@@ -174,8 +174,8 @@ def lambda_handler(event, context):
         repo_url = metadata.get('repo_url')
         readme_key = metadata.get('readme_key')
         docs_key = metadata.get('docs_key')
-        # metadata.get('include_test', 'false').lower() == 'true'
-        include_test = 'false'
+        include_test = metadata.get('include_test', 'false').lower() == 'true'
+        # include_test = 'false'
         korean = metadata.get('korean', 'false').lower() == 'true'
 
         blocks = [

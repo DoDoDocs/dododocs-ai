@@ -479,7 +479,7 @@ class DocumentProcessor:
         contents = []
         for file in files:
             total_code = ''
-            path = self.get_path(file)
+            path = os.path.dirname(file)
 
             try:
                 with open(file, 'r', encoding='utf-8') as f:
