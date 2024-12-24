@@ -105,7 +105,7 @@ def chat():
                 else:
                     chunk_buffer = ""
                     for chunk in response:
-                        chunk_buffer += chunk.replace('\n', '<br/>')
+                        chunk_buffer += chunk  # .replace('\n', '<br/>')
                         # chunk_buffer += chunk
                         if len(chunk_buffer) > 200:
                             logger.info(f"chunk_buffer: {chunk_buffer}")
