@@ -26,7 +26,7 @@ file_utils = FileUtils()
 s3 = boto3.client('s3')
 
 
-async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
+async def perform_full_generation(repo_url, clone_dir, user_name, repo_name, readme_key,
                                   docs_key, include_test, korean, blocks, metadata):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
@@ -53,7 +53,7 @@ async def perform_full_generation(repo_url, clone_dir, repo_name, readme_key,
             logger.error("문서 또는 README 생성 실패")
             raise Exception("문서 또는 README 생성 실패")
 
-        await add_data_to_db(f"{repo_name}_generated", f"{clone_dir}/dododocs", [".md"])
+        await add_data_to_db(f"{user_name}_{repo_name}_generated", f"{clone_dir}/dododocs", [".md"])
 
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}, problem: {e}")
@@ -138,7 +138,7 @@ async def generate(request):
         tasks = []
         tasks.append(asyncio.create_task(
             perform_full_generation(
-                request['repo_url'], clone_dir, repo_name, request['readme_key'],
+                request['repo_url'], clone_dir, user_name, repo_name, request['readme_key'],
                 request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
         ))
 
@@ -151,7 +151,7 @@ async def generate(request):
         # )
         # tasks.append(source_db_task)
         # await asyncio.gather(*tasks)
-        await add_data_to_db(f"{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
+        await add_data_to_db(f"{user_name}_{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
         return True
     except Exception as e:
         logger.error(f"generate 문서 및 README 생성 오류: {str(e)}")
