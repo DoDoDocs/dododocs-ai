@@ -141,6 +141,7 @@ async def upload_to_s3(bucket: str, file_path: str, key: str, metadata: dict = N
 
 
 def remove_markdown_blocks(content):
-    content = content.replace("```markdown", "")
-    content = content.replace(f"```\n```", "```")
+    if content.startswith("```markdown") and content.endswith("```"):
+        content = content.replace("```markdown", "")
+        content = content[:-3]
     return content

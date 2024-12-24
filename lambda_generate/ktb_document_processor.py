@@ -878,7 +878,7 @@ class DocumentProcessor:
                 directory, f"{category}_summary.md")
             try:
                 async with aiofiles.open(output_path, "w", encoding="utf-8") as f:
-                    await f.write(summary_content)
+                    await f.write(remove_markdown_blocks(summary_content))
                 print(f"{category}_summary.md 파일 생성 완료: {output_path}")
             except Exception as e:
                 logger.error(f"{category}_summary.md 파일 생성 오류: {str(e)}")
