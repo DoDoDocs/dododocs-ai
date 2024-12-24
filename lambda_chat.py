@@ -99,7 +99,8 @@ def chat():
         if stream:
             def stream_response():
                 if isinstance(response, str):
-                    json_data = json.dumps({"content": response})
+                    json_data = json.dumps(
+                        {'answer': response}, ensure_ascii=False)
                     yield f"data: {json_data}\n\n".encode('utf-8')
                 else:
                     chunk_buffer = ""
@@ -108,12 +109,14 @@ def chat():
                         # chunk_buffer += chunk
                         if len(chunk_buffer) > 200:
                             logger.info(f"chunk_buffer: {chunk_buffer}")
-                            json_data = json.dumps({"content": chunk_buffer})
+                            json_data = json.dumps(
+                                {'answer': chunk_buffer}, ensure_ascii=False)
                             yield f"data: {json_data}\n\n".encode('utf-8')
                             time.sleep(1)
                             chunk_buffer = ""
                     if chunk_buffer:
-                        json_data = json.dumps({"content": chunk_buffer})
+                        json_data = json.dumps(
+                            {'answer': chunk_buffer}, ensure_ascii=False)
                         yield f"data: {json_data}\n\n".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
