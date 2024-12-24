@@ -99,18 +99,22 @@ def chat():
         if stream:
             def stream_response():
                 if isinstance(response, str):
-                    yield f"data: {response}\n\n".encode('utf-8')
+                    json_data = json.dumps({"content": response})
+                    yield f"data: {json_data}\n\n".encode('utf-8')
                 else:
                     chunk_buffer = ""
                     for chunk in response:
-                        chunk_buffer += chunk
+                        chunk_buffer += chunk.replace('\n', '<br/>')
+                        # chunk_buffer += chunk
                         if len(chunk_buffer) > 200:
                             logger.info(f"chunk_buffer: {chunk_buffer}")
-                            yield f"data: {chunk_buffer}\n".encode('utf-8')
+                            json_data = json.dumps({"content": chunk_buffer})
+                            yield f"data: {json_data}\n\n".encode('utf-8')
                             time.sleep(1)
                             chunk_buffer = ""
                     if chunk_buffer:
-                        yield f"data: {chunk_buffer}\n\n".encode('utf-8')
+                        json_data = json.dumps({"content": chunk_buffer})
+                        yield f"data: {json_data}\n\n".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
             if isinstance(response, str):
