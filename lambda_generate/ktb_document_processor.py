@@ -918,7 +918,7 @@ async def send_request(session, category, prompt, content, filename, clone_dir, 
                     async with aiofiles.open(md_filename, "w", encoding="utf-8") as file:
                         content = data.get("choices", [{}])[0].get(
                             "message", {}).get("content", "No response")
-                        await file.write(content)
+                        await file.write(remove_markdown_blocks(content))
                     return content
                 else:
                     # API 서버에서 반환된 에러 처리
