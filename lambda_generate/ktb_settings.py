@@ -111,7 +111,7 @@ FILE_EXTENSIONS = [
 ]
 
 EXCLUDE_DIRS = ['.git', 'node_modules', 'venv', '__pycache__', 'dist', 'tests',
-                'test', 'examples', 'example', '.DS_Store', 'gradle-wrapper', '__MACOSX']
+                'test', '.DS_Store', 'gradle-wrapper', '__MACOSX']
 
 BUILD_FILE_NAMES = [
     'Makefile', 'CMakeLists.txt', 'setup.py', 'main.py', 'pyproject.toml',

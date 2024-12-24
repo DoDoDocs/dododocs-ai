@@ -174,7 +174,8 @@ def lambda_handler(event, context):
         repo_url = metadata.get('repo_url')
         readme_key = metadata.get('readme_key')
         docs_key = metadata.get('docs_key')
-        include_test = metadata.get('include_test', 'false').lower() == 'true'
+        # metadata.get('include_test', 'false').lower() == 'true'
+        include_test = 'false'
         korean = metadata.get('korean', 'false').lower() == 'true'
 
         blocks = [

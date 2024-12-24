@@ -15,15 +15,16 @@ logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
-async def process_file(file_path: Path, vector_store, file_metadata) -> List[Dict[str, Any]]:
-    """파일을 처리하고 청크 데이터를 반환"""
-    chunk_data_list = []
+async def process_file(file_path: Path, vector_store, file_metadata) -> int:
+    """파일을 처리하고 청크 데이터를 벡터 스토어에 저장"""
+    total_chunks = 0
     try:
         async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
             doc = await file.read()
             if doc.strip():
                 chunks = embedding_chunker.chunk(doc)
-
+                logger.info(f"file path : {
+                            str(file_path)}, chunks size : {len(chunks)}")
                 if chunks:
                     chunk_contents = [
                         str(chunk).replace('\n', ' ').strip()
@@ -39,19 +40,77 @@ async def process_file(file_path: Path, vector_store, file_metadata) -> List[Dic
                              for k, v in file_metadata.items()}
                             for _ in range(len(chunk_contents))
                         ]
-                        for i in range(len(chunk_contents)):
-                            chunk_data_list.append({
-                                "document": chunk_contents[i],
-                                "metadata": chunk_metadatas[i],
-                                "id": chunk_ids[i]
-                            })
+                        vector_store.add(
+                            documents=chunk_contents,
+                            metadatas=chunk_metadatas,
+                            ids=chunk_ids
+                        )
+                        total_chunks = len(chunk_contents)
     except UnicodeDecodeError as e:
-        print(f"Unicode decode error in file {
-              str(file_path)}: {str(e)}")
+        print(f"Unicode decode error in file {str(file_path)}: {str(e)}")
     except Exception as e:
-        print(f"Error processing file {
-              str(file_path)}: {str(e)}")
-    return chunk_data_list
+        print(f"Error processing file {str(file_path)}: {str(e)}")
+    return total_chunks
+
+
+async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
+    """DB에 데이터를 추가"""
+    try:
+        vector_store = chroma_client.get_or_create_collection(
+            name=db_name,
+            embedding_function=embedding_func,
+            metadata=DISTANCE
+        )
+        repo_path = Path(path)
+        total_files_processed = 0
+        processed_files = set()
+        all_file_paths = []
+
+        for root, _, files in os.walk(repo_path):
+            for filename in files:
+                if filename == '.DS_Store':
+                    continue
+                if any(filename.endswith(ft) or filename == ft for ft in file_type):
+                    file_path = Path(root) / filename
+                    if file_path.is_file():
+                        all_file_paths.append(file_path)
+
+        batch_size = 30  # 배치 크기 설정
+        for i in range(0, len(all_file_paths), batch_size):
+            try:
+                batch_paths = all_file_paths[i:i + batch_size]
+                for file_path in batch_paths:
+                    if file_path in processed_files:
+                        print(f"Skipping already processed file: {
+                              str(file_path)}")
+                        continue
+                    file_metadata = {
+                        "filename": file_path.name,
+                        "path": str(file_path),
+                        "repository": str(db_name)
+                    }
+                    chunks_added = await process_file(
+                        file_path, vector_store, file_metadata)
+                    if chunks_added > 0:
+                        total_files_processed += chunks_added
+                        processed_files.add(file_path)
+            except Exception as e:
+                logger.error(f"Error processing batch: {str(e)}")
+                continue
+
+        if total_files_processed == 0:
+            print("No valid files were processed")
+            print(f"{db_name}")
+            print(f"{path}")
+            return 0
+
+        total_chunks = vector_store.count()
+        print(f"Successfully processed {total_files_processed} files with total {
+              total_chunks} chunks in {db_name}")
+        return total_chunks
+    except Exception as e:
+        logger.error(f"Error adding data to DB: {str(e)}")
+        raise
 
 
 # async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
