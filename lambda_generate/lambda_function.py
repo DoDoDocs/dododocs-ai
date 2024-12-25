@@ -78,7 +78,7 @@ async def process_docs(directory_path: dict[str, list], output_directory: str, d
         return False
 
 
-def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str]:
+def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str, str]:
     """저장소 준비: URL 파싱, S3 다운로드, 압축 해제"""
     try:
         user_name, repo_name, source_path = parse_repo_url(repo_url)
@@ -151,7 +151,7 @@ async def generate(request):
         logger.info(f"source_path: {clone_dir}/{source_path}")
         tasks.append(asyncio.create_task(
             add_data_to_db(f"{user_name}_{repo_name}_source", f"{
-                           clone_dir}/{source_path}", file_types)
+                           clone_dir}", file_types)
         ))
         await asyncio.gather(*tasks)
 
@@ -161,7 +161,7 @@ async def generate(request):
         # )
         # tasks.append(source_db_task)
         # await asyncio.gather(*tasks)
-        await add_data_to_db(f"{user_name}_{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
+        # await add_data_to_db(f"{user_name}_{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
 
         return True
     except Exception as e:
