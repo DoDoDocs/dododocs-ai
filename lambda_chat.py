@@ -122,11 +122,11 @@ def chat():
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
             if isinstance(response, str):
-                return json.dumps({'AI answer': response}), 200
+                return json.dumps({'answer': response}), 200
             else:
                 full_response = "".join(response)
                 logger.info(f"response: {full_response}")
-                return json.dumps({'AI answer': full_response}), 200
+                return json.dumps({'answer': full_response}), 200
 
     except Exception as error:
         logger.error(f"채팅 오류: {str(error)}", exc_info=True)
