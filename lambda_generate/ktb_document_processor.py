@@ -312,6 +312,7 @@ class DocumentProcessor:
             optimized_context = self._build_optimized_context(source_files)
             chunks = self.text_processor.split_text(
                 optimized_context, max_tokens=GPT_MAX_TOKENS)  # 청크 크기 제한
+            logger.info(f"chunks length : {len(chunks)}")
             # 청크 단위로 처리하고 결과 병합
             if len(chunks) > 1:
                 result = await self._process_chunks(chunks, repo_url, readme_template, korean)
