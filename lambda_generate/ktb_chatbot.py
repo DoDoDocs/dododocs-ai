@@ -30,16 +30,14 @@ async def process_chunk(chunk, file_path, vector_store, file_metadata):
     return 0
 
 
-async def process_file(file_path: Path, vector_store, file_metadata, executor) -> int:
+async def process_file(file_path: Path, vector_store, file_metadata) -> int:
     """파일을 처리하고 청크 데이터를 벡터 스토어에 저장"""
     total_chunks = 0
     try:
         async with aiofiles.open(file_path, 'r', encoding='utf-8') as file:
             doc = await file.read()
             if doc.strip():
-                chunks = await asyncio.get_running_loop().run_in_executor(
-                    executor, embedding_chunker.chunk, doc
-                )
+                chunks = embedding_chunker.chunk(doc)
                 logger.info(f"file path : {
                             str(file_path)}, chunks size : {len(chunks)}")
                 if chunks:
@@ -80,29 +78,28 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                         all_file_paths.append(file_path)
 
         batch_size = 100  # 배치 크기 설정
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            for i in range(0, len(all_file_paths), batch_size):
-                try:
-                    batch_paths = all_file_paths[i:i + batch_size]
-                    tasks = []
-                    for file_path in batch_paths:
-                        if file_path in processed_files:
-                            print(f"Skipping already processed file: {
-                                  str(file_path)}")
-                            continue
-                        file_metadata = {
-                            "filename": file_path.name,
-                            "path": str(file_path),
-                            "repository": str(db_name)
-                        }
-                        tasks.append(process_file(
-                            file_path, vector_store, file_metadata, executor))
-                    results = await asyncio.gather(*tasks)
-                    total_files_processed += sum(results)
-                    processed_files.update(batch_paths)
-                except Exception as e:
-                    logger.error(f"Error processing batch: {str(e)}")
-                    continue
+        for i in range(0, len(all_file_paths), batch_size):
+            try:
+                batch_paths = all_file_paths[i:i + batch_size]
+                tasks = []
+                for file_path in batch_paths:
+                    if file_path in processed_files:
+                        print(f"Skipping already processed file: {
+                              str(file_path)}")
+                        continue
+                    file_metadata = {
+                        "filename": file_path.name,
+                        "path": str(file_path),
+                        "repository": str(db_name)
+                    }
+                    tasks.append(process_file(
+                        file_path, vector_store, file_metadata))
+                results = await asyncio.gather(*tasks)
+                total_files_processed += sum(results)
+                processed_files.update(batch_paths)
+            except Exception as e:
+                logger.error(f"Error processing batch: {str(e)}")
+                continue
 
         if total_files_processed == 0:
             print("No valid files were processed")
