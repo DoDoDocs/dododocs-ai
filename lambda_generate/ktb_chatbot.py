@@ -74,7 +74,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                     if file_path.is_file():
                         all_file_paths.append(file_path)
 
-        batch_size = 100  # 배치 크기 설정
+        batch_size = 200  # 배치 크기 설정
         for i in range(0, len(all_file_paths), batch_size):
             try:
                 batch_paths = all_file_paths[i:i + batch_size]
