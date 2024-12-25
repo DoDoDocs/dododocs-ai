@@ -74,27 +74,38 @@ def chat():
         # 크리스마스 이스터에그
         if query == "!christmas":
             return json.dumps(is_christmas()), 200
-
-        if chat_history:
-            chat_history_list = []
-            for item in chat_history:
-                chat_history_list.append(
-                    {"role": "user", "content": item["question"]})
-                chat_history_list.append(
-                    {"role": "assistant", "content": item["answer"]})
-            response = codebase_chat(
-                query=query,
-                repo_url=repo_url,
-                chat_history=chat_history_list,
-                stream=stream
-            )
-        else:
-            response = codebase_chat(
-                query=query,
-                repo_url=repo_url,
-                chat_history=chat_history,
-                stream=stream
-            )
+        try:
+            if chat_history:
+                chat_history_list = []
+                for item in chat_history:
+                    chat_history_list.append(
+                        {"role": "user", "content": item["question"]})
+                    chat_history_list.append(
+                        {"role": "assistant", "content": item["answer"]})
+                response = codebase_chat(
+                    query=query,
+                    repo_url=repo_url,
+                    chat_history=chat_history_list,
+                    stream=stream
+                )
+            else:
+                response = codebase_chat(
+                    query=query,
+                    repo_url=repo_url,
+                    chat_history=chat_history,
+                    stream=stream
+                )
+        except Exception as e:
+            if str(e) == "Collection does not exist":
+                if stream:
+                    def stream_response_error():
+                        yield f"data: {json.dumps({'answer': 'Database not found'}, ensure_ascii=False)}\n\n".encode('utf-8')
+                    return Response(stream_with_context(stream_response_error()), content_type='text/event-stream')
+                else:
+                    return jsonify({"detail": "Database not found"}), 404
+            else:
+                logger.error(f"Error in codebase_chat: {e}")
+                return jsonify({"detail": "Error in codebase_chat"}), 500
 
         if stream:
             def stream_response():

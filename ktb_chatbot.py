@@ -183,7 +183,7 @@ def codebase_chat(query: str, repo_url: str, chat_history: List[dict] = None, st
             error_msg = f"Collection {user_name}_{repo_name}_source or {
                 user_name}_{repo_name}_generated does not exist"
             logger.error(error_msg)
-            raise Exception(error_msg)
+            raise Exception("Collection does not exist")
         db_list = [vector_store_source, vector_store_generated]
         if chat_history:
             total_content = ''.join([msg['content']
