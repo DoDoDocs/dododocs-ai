@@ -315,9 +315,9 @@ class DocumentProcessor:
             # 청크 단위로 처리하고 결과 병합
             if len(chunks) > 1:
                 result = await self._process_chunks(chunks, repo_url, readme_template, korean)
-            elif len(optimized_context) < 1000000:
-                split_chunks = chunks
-                result = await self._process_chunks(split_chunks, repo_url, readme_template, korean)
+            # elif len(optimized_context) < 1000000:
+            #     split_chunks = chunks
+            #     result = await self._process_chunks(split_chunks, repo_url, readme_template, korean)
             else:
                 result = await self._process_single_context(chunks[0].text, repo_url, readme_template, model=GPT_MODEL)
 

@@ -57,10 +57,8 @@ BUCKET_NAME = config.get('bucket_name', 'haon-dododocs')
 
 if MODEL.startswith('gpt' or 'claude'):
     MAX_TOKENS_PER_BATCH = 1500000
-    MAX_TOKEN_LENGTH = 120000
 elif MODEL.startswith('gemini'):
     MAX_TOKENS_PER_BATCH = 3500000
-    MAX_TOKEN_LENGTH = 1000000
 
     # 임베딩 모델과 차원 설정
 if EMBEDDING_MODEL == "text-embedding-3-small":
@@ -78,7 +76,7 @@ else:
 tokenizer = tiktoken.encoding_for_model(GPT_MODEL)
 chunker = TokenChunker(
     tokenizer=tokenizer,
-    chunk_size=MAX_TOKEN_LENGTH,  # maximum tokens per chunk
+    chunk_size=GPT_MAX_TOKENS,  # maximum tokens per chunk
     chunk_overlap=128  # overlap between chunks
 )
 embedding_chunker = TokenChunker(
