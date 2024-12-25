@@ -621,7 +621,10 @@ class DocumentProcessor:
 
     async def _save_readme(self, content: str, clone_dir: str, readme_key: str, metadata: dict = None):
         """README 파일 저장"""
-        readme_path = os.path.join(clone_dir, "README.md")
+        readme_path = os.path.join(clone_dir, "dododocs")
+        if not os.path.exists(readme_path):
+            os.makedirs(readme_path, exist_ok=True)
+        readme_path = os.path.join(readme_path, "README.md")
 
         try:
             async with aiofiles.open(readme_path, "w", encoding="utf-8") as f:

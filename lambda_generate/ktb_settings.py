@@ -173,9 +173,6 @@ s3 = boto3.client(
 )
 
 
-print(chroma_client.list_collections())
-
-
 class SelfEmbeddingFunction(EmbeddingFunction[List[str]]):
     def __init__(self, timeout: int = 80):
         self.timeout = timeout
