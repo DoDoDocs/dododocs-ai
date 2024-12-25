@@ -56,7 +56,7 @@ async def perform_full_generation(repo_url, clone_dir, user_name, repo_name, rea
         all_tasks_successful = all(not isinstance(
             result, Exception) for result in results)
         if all_tasks_successful:
-            await add_data_to_db(f"{user_name}_{repo_name}_generated", f"{clone_dir}/dododocs", [".md"])
+            await add_data_to_db(f"{user_name}_{repo_name}_generated", f"{clone_dir}", [".md"])
         else:
             logger.error(f"Task failed, not adding data to db")
 
