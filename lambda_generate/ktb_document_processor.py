@@ -510,7 +510,6 @@ class DocumentProcessor:
 
             total_code += f"code :\n{content}"
             contents.append(total_code)
-
         return contents
 
     def _extract_filename(self, filepath: str) -> str:

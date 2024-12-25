@@ -95,11 +95,12 @@ def prepare_repository(repo_url: str, s3_key: str) -> Tuple[str, str, str, str, 
         # 폴더 이름 변경
         try:
             extracted_folder_name = os.listdir(clone_dir)[0]
+            logger.info(f"extracted_folder_name: {extracted_folder_name}")
             extracted_folder_path = os.path.join(
                 clone_dir, extracted_folder_name)
             new_folder_path = os.path.join(clone_dir, source_path)
+            logger.info(f"new_folder_path: {new_folder_path}")
             os.rename(extracted_folder_path, new_folder_path)
-            clone_dir = new_folder_path
         except Exception as e:
             logger.error(f"Error renaming folder: {str(e)}")
             raise Exception(f"Error renaming folder: {str(e)}")
