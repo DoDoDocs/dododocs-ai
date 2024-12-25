@@ -141,11 +141,11 @@ async def generate(request):
             'repo_url': request['repo_url']
         }
         tasks = []
-        tasks.append(asyncio.create_task(
-            perform_full_generation(
-                request['repo_url'], clone_dir, user_name, repo_name, request['readme_key'],
-                request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
-        ))
+        # tasks.append(asyncio.create_task(
+        #     perform_full_generation(
+        #         request['repo_url'], clone_dir, user_name, repo_name, request['readme_key'],
+        #         request['docs_key'], request['include_test'], request['korean'], request['blocks'], metadata)
+        # ))
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"source_path: {clone_dir}/{source_path}")
