@@ -170,7 +170,7 @@ def codebase_chat(query: str, repo_url: str, chat_history: List[dict] = None, st
         chroma_client = get_chroma_client()
         collection_list = [
             collection.name for collection in chroma_client.list_collections()]
-        if f"{repo_name}_source" in collection_list and f"{repo_name}_generated" in collection_list:
+        if f"{user_name}_{repo_name}_source" in collection_list and f"{user_name}_{repo_name}_generated" in collection_list:
             vector_store_source = chroma_client.get_collection(
                 name=f"{user_name}_{repo_name}_source",
                 embedding_function=get_embedding_function()
