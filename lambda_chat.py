@@ -98,28 +98,34 @@ def chat():
 
         if stream:
             def stream_response():
-                if isinstance(response, str):
-                    json_data = json.dumps(
-                        {'answer': response}, ensure_ascii=False)
-                    yield f"data: {json_data}\n\n".encode('utf-8')
-                else:
-                    chunk_buffer = ""
-                    for chunk in response:
-                        chunk_buffer += chunk  # .replace('\n', '<br/>')
-                        # chunk_buffer += chunk
-                        if len(chunk_buffer) > 200:
-                            logger.info(f"chunk_buffer: {chunk_buffer}")
+                try:
+                    if isinstance(response, str):
+                        json_data = json.dumps(
+                            {'answer': response}, ensure_ascii=False)
+                        yield f"data: {json_data}\n\n".encode('utf-8')
+                    else:
+                        chunk_buffer = ""
+                        for chunk in response:
+                            chunk_buffer += chunk
+                            if len(chunk_buffer) > 200:  # 버퍼 크기 조건
+                                logger.debug(f"chunk_buffer: {
+                                             chunk_buffer}")  # 로깅 최적화
+                                json_data = json.dumps(
+                                    {'answer': chunk_buffer}, ensure_ascii=False)
+                                yield f"data: {json_data}\n\n".encode('utf-8')
+                                time.sleep(0.5)  # 대기 시간 조정
+                                chunk_buffer = ""
+                        if chunk_buffer:
+                            logger.debug(f"chunk_buffer: {chunk_buffer}")
                             json_data = json.dumps(
                                 {'answer': chunk_buffer}, ensure_ascii=False)
-                            yield f"{json_data}\n\n".encode('utf-8')
-                            time.sleep(1)
-                            chunk_buffer = ""
-                    if chunk_buffer:
-                        logger.info(f"chunk_buffer: {chunk_buffer}")
-                        json_data = json.dumps(
-                            {'answer': chunk_buffer}, ensure_ascii=False)
-                        yield f"{json_data}\n\n".encode('utf-8')
+                            yield f"data: {json_data}\n\n".encode('utf-8')
+                except Exception as e:
+                    logger.error(f"Stream response error: {e}")  # 에러 로깅 추가
+                    yield f"data: {json.dumps({'error': 'Stream interrupted'}, ensure_ascii=False)}\n\n".encode('utf-8')
+
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
+
         else:
             if isinstance(response, str):
                 return json.dumps({'answer': response}), 200
