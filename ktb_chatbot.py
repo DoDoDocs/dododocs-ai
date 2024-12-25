@@ -167,6 +167,7 @@ def codebase_chat(query: str, repo_url: str, chat_history: List[dict] = None, st
     """채팅 응답 생성"""
     try:
         user_name, repo_name = parse_repo_url(repo_url)
+        chroma_client = get_chroma_client()
         collection_list = [
             collection.name for collection in chroma_client.list_collections()]
         if f"{repo_name}_source" in collection_list and f"{repo_name}_generated" in collection_list:

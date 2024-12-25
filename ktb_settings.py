@@ -58,11 +58,20 @@ else:
     print("path exists")
 
 # ChromaDB 클라이언트 초기화
-try:
-    chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-    print("ChromaDB client initialized successfully.")
-except Exception as e:
-    print(f"Failed to initialize ChromaDB client: {e}")
+# try:
+#     chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+#     print("ChromaDB client initialized successfully.")
+# except Exception as e:
+#     print(f"Failed to initialize ChromaDB client: {e}")
+
+
+def get_chroma_client():
+    try:
+        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+        print("ChromaDB client initialized successfully.")
+    except Exception as e:
+        print(f"Failed to initialize ChromaDB client: {e}")
+    return chroma_client
 
 
 def get_openai_client():
