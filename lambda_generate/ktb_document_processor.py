@@ -270,6 +270,7 @@ class DocumentProcessor:
             '.ts': 'ts',
             '.cpp': 'cpp',
             '.cs': 'cs',
+            '.go': 'go'
             # 필요한 확장자 추가
         }
 
