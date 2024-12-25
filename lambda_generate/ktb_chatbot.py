@@ -40,7 +40,7 @@ async def process_file(file_path: Path, vector_store, file_metadata) -> int:
                              for k, v in file_metadata.items()}
                             for _ in range(len(chunk_contents))
                         ]
-                        vector_store.add(
+                        vector_store.upsert(
                             documents=chunk_contents,
                             metadatas=chunk_metadatas,
                             ids=chunk_ids
