@@ -53,7 +53,12 @@ async def perform_full_generation(repo_url, clone_dir, user_name, repo_name, rea
             logger.error("문서 또는 README 생성 실패")
             raise Exception("문서 또는 README 생성 실패")
 
-        await add_data_to_db(f"{user_name}_{repo_name}_generated", f"{clone_dir}/dododocs", [".md"])
+        all_tasks_successful = all(not isinstance(
+            result, Exception) for result in results)
+        if all_tasks_successful:
+            await add_data_to_db(f"{user_name}_{repo_name}_generated", f"{clone_dir}/dododocs", [".md"])
+        else:
+            logger.error(f"Task failed, not adding data to db")
 
     except Exception as e:
         logger.error(f"문서 및 README 생성 오류: {str(e)}, problem: {e}")
