@@ -110,14 +110,14 @@ def chat():
                         if len(chunk_buffer) > 200:
                             logger.info(f"chunk_buffer: {chunk_buffer}")
                             json_data = json.dumps(
-                                {'AI asnwer': chunk_buffer}, ensure_ascii=False)
+                                {'asnwer': chunk_buffer}, ensure_ascii=False)
                             yield f"{json_data}\n\n".encode('utf-8')
                             time.sleep(1)
                             chunk_buffer = ""
                     if chunk_buffer:
                         logger.info(f"chunk_buffer: {chunk_buffer}")
                         json_data = json.dumps(
-                            {'AI asnwer': chunk_buffer}, ensure_ascii=False)
+                            {'asnwer': chunk_buffer}, ensure_ascii=False)
                         yield f"{json_data}\n\n".encode('utf-8')
             return Response(stream_with_context(stream_response()), content_type='text/event-stream')
         else:
