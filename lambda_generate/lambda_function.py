@@ -149,14 +149,12 @@ async def generate(request):
 
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"total files : {len(file_types)}")
+        tasks.append(asyncio.create_task(
+            add_data_to_db(f"{user_name}_{repo_name}_source", f"{
+                           clone_dir}/{source_path}", file_types)
+        ))
         await asyncio.gather(*tasks)
-        # source_db_task = asyncio.create_task(
-        #     add_data_to_db(f"{repo_name}_source", f"{
-        #                    clone_dir}/{source_path}", file_types)
-        # )
-        # tasks.append(source_db_task)
-        # await asyncio.gather(*tasks)
-        await add_data_to_db(f"{user_name}_{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
+
         return True
     except Exception as e:
         logger.error(f"generate 문서 및 README 생성 오류: {str(e)}")
