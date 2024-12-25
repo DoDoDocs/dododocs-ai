@@ -156,7 +156,6 @@ def stream_response(query: str, db_list: List[Any], chat_history: Optional[List[
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
                 content = chunk.choices[0].delta.content
-                logger.debug(f"Streamed chunk: {content}")
                 yield content
 
     except Exception as e:
