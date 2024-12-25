@@ -6,8 +6,8 @@ import os
 from typing import List, Dict, Any
 from pathlib import Path
 import logging
-import tiktoken
 import aiofiles
+import asyncio
 
 """**FUNCTION FOR CHAT**"""
 # Configure logging
@@ -46,17 +46,16 @@ async def process_file(file_path: Path, vector_store, file_metadata) -> int:
                             ids=chunk_ids
                         )
                         total_chunks = len(chunk_contents)
-    except UnicodeDecodeError as e:
-        print(f"Unicode decode error in file {str(file_path)}: {str(e)}")
     except Exception as e:
-        print(f"Error processing file {str(file_path)}: {str(e)}")
+        logger.info(f"file path : {str(file_path)}")
+        logger.error(f"Error processing file {str(file_path)}: {str(e)}")
     return total_chunks
 
 
 async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
     """DB에 데이터를 추가"""
     try:
-        vector_store = chroma_client.get_or_create_collection(
+        vector_store = chroma_client.get_collection(
             name=db_name,
             embedding_function=embedding_func,
             metadata=DISTANCE
@@ -75,38 +74,43 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                     if file_path.is_file():
                         all_file_paths.append(file_path)
 
-        batch_size = 30  # 배치 크기 설정
+        batch_size = 50  # 배치 크기 설정
         for i in range(0, len(all_file_paths), batch_size):
             try:
                 batch_paths = all_file_paths[i:i + batch_size]
+                tasks = []
                 for file_path in batch_paths:
                     if file_path in processed_files:
-                        print(f"Skipping already processed file: {
-                              str(file_path)}")
+                        logger.info(f"Skipping already processed file: {
+                                    str(file_path)}")
                         continue
                     file_metadata = {
                         "filename": file_path.name,
                         "path": str(file_path),
                         "repository": str(db_name)
                     }
-                    chunks_added = await process_file(
-                        file_path, vector_store, file_metadata)
+                    tasks.append(process_file(
+                        file_path, vector_store, file_metadata))
+
+                results = await asyncio.gather(*tasks)
+                for chunks_added in results:
                     if chunks_added > 0:
                         total_files_processed += chunks_added
                         processed_files.add(file_path)
+                logger.info(f"batch size : {len(batch_paths)}")
             except Exception as e:
                 logger.error(f"Error processing batch: {str(e)}")
+                logger.info(f"batch size : {len(batch_paths)}")
                 continue
-
         if total_files_processed == 0:
-            print("No valid files were processed")
-            print(f"{db_name}")
-            print(f"{path}")
+            logger.error("No valid files were processed")
+            logger.error(f"{db_name}")
+            logger.error(f"{path}")
             return 0
 
         total_chunks = vector_store.count()
-        print(f"Successfully processed {total_files_processed} files with total {
-              total_chunks} chunks in {db_name}")
+        logger.info(f"Successfully processed {total_files_processed} files with total {
+                    total_chunks} chunks in {db_name}")
         return total_chunks
     except Exception as e:
         logger.error(f"Error adding data to DB: {str(e)}")
