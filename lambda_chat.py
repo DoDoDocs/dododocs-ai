@@ -104,7 +104,7 @@ def chat():
                         yield f"data: {json.dumps({'answer': 'Database not found'}, ensure_ascii=False)}\n\n".encode('utf-8')
                     return Response(stream_with_context(stream_response_error()), content_type='text/event-stream')
                 else:
-                    return jsonify({"detail": "Database not found"}), 404
+                    return jsonify({"detail": "Database is not yet created. Please wait for a moment."}), 404
             else:
                 logger.error(f"Error in codebase_chat: {e}")
                 return jsonify({"detail": "Error in codebase_chat"}), 500
