@@ -29,7 +29,7 @@ CORS(app, resources={r"/chat": {"origins": origins}},
 
 
 def is_christmas():
-    result = ""
+    result = "```"
     result += ('\n'.join
                ([''.join
                  ([('Merry Christmas '[(x-y) % 8]
@@ -38,7 +38,7 @@ def is_christmas():
                      ** 3 <= 0 else ' ')
                   for x in range(-30, 30)])
                 for y in range(15, -15, -1)]))
-    result += "Merry Christmas"
+    result += "Merry Christmas```"
     return result
 
 
