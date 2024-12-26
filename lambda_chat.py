@@ -101,7 +101,7 @@ def chat():
             if str(e) == "Collection does not exist":
                 if stream:
                     def stream_response_error():
-                        yield f"data: {json.dumps({'answer': 'Database not found'}, ensure_ascii=False)}\n\n".encode('utf-8')
+                        yield f"data: {json.dumps({'answer': 'Database is not yet created. Please wait for a moment.'}, ensure_ascii=False)}\n\n".encode('utf-8')
                     return Response(stream_with_context(stream_response_error()), content_type='text/event-stream')
                 else:
                     return jsonify({"detail": "Database is not yet created. Please wait for a moment."}), 404
