@@ -78,7 +78,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
         for i in range(0, len(all_file_paths), batch_size):
             try:
                 batch_paths = all_file_paths[i:i + batch_size]
-                tasks = []
+                # tasks = []
                 for file_path in batch_paths:
                     if file_path in processed_files:
                         logger.info(f"Skipping already processed file: {
@@ -89,14 +89,17 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
                         "path": str(file_path),
                         "repository": str(db_name)
                     }
-                    tasks.append(process_file(
-                        file_path, vector_store, file_metadata))
-
-                results = await asyncio.gather(*tasks)
-                for chunks_added in results:
+                    chunks_added = await process_file(
+                        file_path, vector_store, file_metadata)
                     if chunks_added > 0:
                         total_files_processed += chunks_added
                         processed_files.add(file_path)
+
+                # results = await asyncio.gather(*tasks)
+                # for chunks_added in results:
+                #     if chunks_added > 0:
+                #         total_files_processed += chunks_added
+                #         processed_files.add(file_path)
                 logger.info(f"batch size : {len(batch_paths)}")
             except Exception as e:
                 logger.error(f"Error processing batch: {str(e)}")
