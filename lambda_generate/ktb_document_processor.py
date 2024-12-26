@@ -647,33 +647,33 @@ class DocumentProcessor:
     async def process_chunk(self, chunk: str, repo_url: str, prompt: str) -> Optional[str]:
         """단일 청크 처리"""
         try:
-            if len(chunk) > 1000000:
-                midpoint = len(chunk) // 2
-                split_chunk = chunk[:midpoint], chunk[midpoint:]
-                results = []
-                for chunk in split_chunk:
-                    result, _ = await self._process_single_context(
-                        chunk, repo_url, prompt, model=GPT_MODEL)
-                    results += result
-                return results
-            else:
-                start_time = time.perf_counter()
+            # if len(chunk) > 1000000:
+            #     midpoint = len(chunk) // 2
+            #     split_chunk = chunk[:midpoint], chunk[midpoint:]
+            #     results = []
+            #     for chunk in split_chunk:
+            #         result, _ = await self._process_single_context(
+            #             chunk, repo_url, prompt, model=GPT_MODEL)
+            #         results += result
+            #     return results
+            # else:
+            start_time = time.perf_counter()
 
-                model = get_gemini_client(prompt)
-                chat = model.start_chat(
-                    history=[
-                        {"role": "user", "parts": prompt}
-                    ]
-                )
+            model = get_gemini_client(prompt)
+            chat = model.start_chat(
+                history=[
+                    {"role": "user", "parts": prompt}
+                ]
+            )
 
-                # 비동기적으로 메시지 전송
-                response = await asyncio.to_thread(
-                    chat.send_message,
-                    f"git repository url : {repo_url}\n\n" + chunk
-                )
-                end_time = time.perf_counter()
-                print(f"### 파트 요약 완료 처리 시간: {end_time - start_time} 초")
-                return response.text
+            # 비동기적으로 메시지 전송
+            response = await asyncio.to_thread(
+                chat.send_message,
+                f"git repository url : {repo_url}\n\n" + chunk
+            )
+            end_time = time.perf_counter()
+            print(f"### 파트 요약 완료 처리 시간: {end_time - start_time} 초")
+            return response.text
 
         except Exception as e:
             print(f"청크 처리 중 오류: {str(e)}")
