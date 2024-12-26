@@ -73,7 +73,9 @@ def chat():
 
         # 크리스마스 이스터에그
         if query == "!christmas":
-            return json.dumps(is_christmas()), 200
+            def stream_response_christmas():
+                yield f"data: {json.dumps({'answer': is_christmas()}, ensure_ascii=False)}\n\n".encode('utf-8')
+            return Response(stream_with_context(stream_response_christmas()), content_type='text/event-stream')
         try:
             if chat_history:
                 chat_history_list = []
