@@ -52,7 +52,7 @@ async def process_file(file_path: Path, vector_store, file_metadata) -> int:
     return total_chunks
 
 
-async def add_data_to_db(db_name: str, path: str, file_type: List[str]) -> int:
+async def add_data_to_db(db_name: str, path: str, file_type: List[str] = None) -> int:
     """DB에 데이터를 추가"""
     try:
         vector_store = chroma_client.get_or_create_collection(
