@@ -118,7 +118,7 @@ BUILD_FILE_NAMES = [
     'setup.cfg', 'requirements-dev.txt', 'tox.ini', 'configure.ac', 'config.h.in',
     '.csproj', '.sln', 'tsconfig.json', 'webpack.config.js', 'gulpfile.js',
     'rollup.config.js', 'build.gradle', 'settings.gradle', 'Jenkinsfile',
-    'Vagrantfile', 'Procfile', 'Brewfile', '.md', 'Dockerfile', 'docker-compose.yml', 'Makefile',
+    'Vagrantfile', 'Procfile', 'Brewfile', 'README.md', 'Dockerfile', 'docker-compose.yml', 'Makefile',
     'CMakeLists.txt', '.env', 'main.py', 'poetry.lock'
 ]
 
