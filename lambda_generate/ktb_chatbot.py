@@ -69,7 +69,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str] = None) -
             for filename in files:
                 if filename == '.DS_Store':
                     continue
-                if filename == 'README.md' and filter_type is None :
+                if filename == 'README.md' and file_type is None :
                     file_path = Path(root) / filename
                     if file_path.is_file():
                         all_file_paths.append(file_path)
