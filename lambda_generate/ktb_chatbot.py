@@ -60,6 +60,31 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str] = None) -
             embedding_function=embedding_func,
             metadata=DISTANCE
         )
+                # README.md만 처리하는 경우
+        if file_type is None:
+            readme_path = os.path.join(path, "README.md")
+            if not os.path.isfile(readme_path):
+                logger.error(f"README.md 파일이 존재하지 않습니다: {readme_path}")
+                return 0  # 처리 실패 시 0 반환
+    
+            # README.md 파일 vector store에 추가
+            file_metadata = {
+                "filename": os.path.basename(readme_path),  # 파일명 추출
+                "path": readme_path,
+                "repository": db_name
+            }
+            with open(readme_path, "r", encoding="utf-8") as file:
+                content = file.read()
+    
+            vector_store.upsert(
+                documents=[content],  # 리스트로 전달
+                metadatas=[file_metadata],  # 리스트로 전달
+                ids=["readme"]  # 고유 ID 설정
+            )
+            logger.info(f"README.md 파일이 성공적으로 추가되었습니다: {readme_path}")
+            return 1  # 처리 성공 시 1 반환
+
+            
         repo_path = Path(path)
         total_files_processed = 0
         processed_files = set()
@@ -69,12 +94,7 @@ async def add_data_to_db(db_name: str, path: str, file_type: List[str] = None) -
             for filename in files:
                 if filename == '.DS_Store':
                     continue
-                if filename == 'README.md' and file_type is None :
-                    file_path = Path(root) / filename
-                    if file_path.is_file():
-                        all_file_paths.append(file_path)
-                    break
-                elif any(filename.endswith(ft) or filename == ft for ft in file_type):
+                if any(filename.endswith(ft) or filename == ft for ft in file_type):
                     file_path = Path(root) / filename
                     if file_path.is_file():
                         all_file_paths.append(file_path)
