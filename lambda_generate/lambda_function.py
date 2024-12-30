@@ -27,7 +27,7 @@ s3 = boto3.client('s3')
 
 
 async def perform_full_generation(repo_url, clone_dir, user_name, repo_name, readme_key,
-                                  docs_key, include_test, korean, blocks, metadata):
+                                docs_key, include_test, korean, blocks, metadata):
     """문서 및 README 생성 작업을 백그라운드에서 수행"""
     try:
         java_files_path = file_utils.find_files(clone_dir, (".java",))
@@ -66,7 +66,8 @@ async def perform_full_generation(repo_url, clone_dir, user_name, repo_name, rea
         logger.error(f"문서 및 README 생성 오류: {str(e)}, problem: {e}")
 
 
-async def process_docs(directory_path: dict[str, list], output_directory: str, docs_key: str, korean: bool, clone_dir: str, metadata: dict = None) -> bool:
+async def process_docs(directory_path: dict[str, list], output_directory: str, 
+                    docs_key: str, korean: bool, clone_dir: str, metadata: dict = None) -> bool:
     """문서 생성 및 요약 처리"""
     try:
         await doc_processor.generate_docs(directory_path, output_directory, korean, clone_dir)
@@ -165,18 +166,7 @@ async def generate(request):
         file_types = [ft for ft in SRC_FILE_NAMES if ft != '.md']
         logger.info(f"source_path: {clone_dir}/{source_path}")
 
-        # tasks.append(asyncio.create_task(
-        #     add_data_to_db(f"{user_name}_{repo_name}_source", f"{
-        #                    clone_dir}", file_types)
-        # ))
         await asyncio.gather(*tasks)
-
-        # source_db_task = asyncio.create_task(
-        #     add_data_to_db(f"{repo_name}_source", f"{
-        #                    clone_dir}/{source_path}", file_types)
-        # )
-        # tasks.append(source_db_task)
-        # await asyncio.gather(*tasks)
         await add_data_to_db(f"{user_name}_{repo_name}_source", f"{clone_dir}/{source_path}", file_types)
 
         return True
@@ -243,21 +233,9 @@ def lambda_handler(event, context):
             "repoUrl": repo_url,
             "chatbotCompleted": True
         }
-        # else:
-        #     while attempt < MAX_RETRIES:
-        #         result = asyncio.run(generate(request))
-        #         attempt += 1
-        #         if result:
-        #             break
-        #         time.sleep(1)
-        #         url = "https://dododocs.com/api/register/status/chatbot"
-        #         body = {
-        #             "repoUrl": repo_url,
-        #             "chatbotCompleted": True
-        #         }
+
         response = requests.put(url, json=body)
-        logger.info(f"response: {response}, response.status_code: {
-                    response.status_code}")
+        logger.info(f"response: {response}, response.status_code: {response.status_code}")
         return {
             "statusCode": 200,
             "body": json.dumps({"message": "All generation completed"})

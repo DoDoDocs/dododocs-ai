@@ -245,8 +245,7 @@ class DocumentProcessor:
                         await self._save_readme(results[0], clone_dir, readme_key, metadata)
 
                     end_time = time.perf_counter()
-                    print(f"README 및 Usage 생성 완료 처리 시간: {
-                          end_time - start_time} 초")
+                    print(f"README 및 Usage 생성 완료 처리 시간: {end_time - start_time} 초")
                     return results
 
             except Exception as e:
@@ -317,9 +316,6 @@ class DocumentProcessor:
             # 청크 단위로 처리하고 결과 병합
             if len(chunks) > 1:
                 result = await self._process_chunks(chunks, repo_url, readme_template, korean)
-            # elif len(optimized_context) < 1000000:
-            #     split_chunks = chunks
-            #     result = await self._process_chunks(split_chunks, repo_url, readme_template, korean)
             else:
                 result = await self._process_single_context(chunks[0].text, repo_url, readme_template, model=GPT_MODEL)
 
@@ -430,8 +426,7 @@ class DocumentProcessor:
             build_files = self._get_build_files(clone_dir)
             context = self._build_files_context(build_files, clone_dir)
             token_count = self.text_processor.count_tokens(context)
-            print(f"Total build files: {
-                  len(build_files)}, tokens: {token_count}")
+            print(f"Total build files: {len(build_files)}, tokens: {token_count}")
 
             if token_count > GPT_MAX_TOKENS:
                 chunks = self.text_processor.split_text(context)
@@ -620,9 +615,6 @@ class DocumentProcessor:
 
     async def _save_readme(self, content: str, clone_dir: str, readme_key: str, metadata: dict = None):
         """README 파일 저장"""
-        # readme_path = os.path.join(clone_dir, "dododocs")
-        # if not os.path.exists(readme_path):
-        #     os.makedirs(readme_path, exist_ok=True)
         readme_path = os.path.join(clone_dir, "README.md")
 
         try:
@@ -647,16 +639,6 @@ class DocumentProcessor:
     async def process_chunk(self, chunk: str, repo_url: str, prompt: str) -> Optional[str]:
         """단일 청크 처리"""
         try:
-            # if len(chunk) > 1000000:
-            #     midpoint = len(chunk) // 2
-            #     split_chunk = chunk[:midpoint], chunk[midpoint:]
-            #     results = []
-            #     for chunk in split_chunk:
-            #         result, _ = await self._process_single_context(
-            #             chunk, repo_url, prompt, model=GPT_MODEL)
-            #         results += result
-            #     return results
-            # else:
             start_time = time.perf_counter()
 
             model = get_gemini_client(prompt)
@@ -818,8 +800,7 @@ class DocumentProcessor:
             # Run tasks and gather results
             results = await asyncio.gather(*[task[1] for task in tasks])
             # Build summaries dictionary for the category
-            summaries = {tasks[i][0]: results[i]
-                         for i in range(len(tasks)) if results[i] is not None}
+            summaries = {tasks[i][0]: results[i] for i in range(len(tasks)) if results[i] is not None}
             return summaries
         except Exception as e:
             print(f"Error processing tasks: {e}")
@@ -903,8 +884,9 @@ async def send_request(session, category, prompt, content, filename, clone_dir, 
     print("send_request :", filename)
     payload = {
         "model": GPT_MODEL,
-        "messages": [{"role": "system", "content": prompt},
-                     {"role": "user", "content": content}]
+        "messages": [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": content}]
     }
     for attempt in range(retries):
         try:
@@ -927,8 +909,7 @@ async def send_request(session, category, prompt, content, filename, clone_dir, 
                 else:
                     # API 서버에서 반환된 에러 처리
                     error_text = await response.text()
-                    print(f"Error for filename '{filename}': {
-                          error_text} (status: {response.status})")
+                    print(f"Error for filename '{filename}': {error_text} (status: {response.status})")
                     return {"error": error_text, "status": response.status}
         except aiohttp.ClientError as e:
             print(f"ClientError for filename '{filename}': {e}")

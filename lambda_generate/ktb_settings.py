@@ -122,8 +122,9 @@ BUILD_FILE_NAMES = [
     'CMakeLists.txt', '.env', 'main.py', 'poetry.lock'
 ]
 
-SRC_FILE_NAMES = ['.py', '.js', '.ts', '.java', '.cpp',
-                  '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
+SRC_FILE_NAMES = [
+    '.py', '.js', '.ts', '.java', '.cpp',
+    '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
 
 
 def get_gemini_client(prompt: str):
@@ -154,8 +155,7 @@ def self_embedding_function(texts: list[str], timeout: int = 80):
             "model": EMBEDDING_MODEL,
             "input": texts
         }
-        response = requests.post(url, headers=headers,
-                                 json=payload, timeout=timeout)
+        response = requests.post(url, headers=headers, json=payload, timeout=timeout)
         response.raise_for_status()
         data = response.json()
         return [item['embedding'] for item in data['data']]
@@ -188,8 +188,7 @@ class SelfEmbeddingFunction(EmbeddingFunction[List[str]]):
                 "model": EMBEDDING_MODEL,
                 "input": texts
             }
-            response = requests.post(url, headers=headers,
-                                     json=payload, timeout=self.timeout)
+            response = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
             response.raise_for_status()
             data = response.json()
             return [item['embedding'] for item in data['data']]
