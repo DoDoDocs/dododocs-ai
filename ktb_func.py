@@ -2,12 +2,12 @@ from ktb_settings import *
 
 import re
 import os
-from urllib.parse import urlparse
 import zipfile
 import logging
 import shutil
 import asyncio
-
+import time
+import functools
 
 logger = logging.getLogger(__name__)
 """**FUNCTIONS**"""
@@ -39,7 +39,7 @@ def check_service_annotation(java_files, include_tests=INCLUDE_TEST):
                                 continue
                             classified_files[annotation].append(file)
             except Exception as e:
-                logger.error(f"파일 읽기 오류 {file}: {str(e)}")
+                print(f"파일 읽기 오류 {file}: {str(e)}")
                 continue
 
     print(f"전체 파일 수: {len(java_files)}")
@@ -59,7 +59,8 @@ def parse_repo_url(repo_url):
     parts = repo_url.rstrip('/').split('/')
     user_name = parts[-3]
     repo_with_branch = parts[-2]+'_'+parts[-1]
-    return user_name, repo_with_branch
+    source_path = parts[-3]+'-'+parts[-2]+'-'+parts[-1]
+    return user_name, repo_with_branch, source_path
 
 
 def download_zip_from_s3(BUCKET_NAME, object_key, download_path):
@@ -87,7 +88,12 @@ def extract_zip(file_path, extract_to):
 
 def create_zip(directory, zip_path):
     """디렉토리의 모든 파일을 ZIP으로 압축"""
+    if not os.path.exists(directory):
+        logger.warning(f"디렉토리 없음: {directory}. 빈 ZIP 파일 생성")
+        with zipfile.ZipFile(zip_path, 'w') as zip_ref:
+            return  # 빈 ZIP 파일 생성 후 함수 종료
     with zipfile.ZipFile(zip_path, 'w') as zip_ref:
+        logger.info(f"zip_path: {zip_path}")
         for root, dirs, files in os.walk(directory):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -116,23 +122,51 @@ async def async_cleanup(repo_zip: str, clone_dir: str, doc_zip: str):
         print(f"Cleanup failed: {str(e)}")
 
 
-async def upload_to_s3(bucket: str, file_path: str, key: str):
-    """S3에 파일 업로드"""
+async def upload_to_s3(bucket: str, file_path: str, key: str, metadata: dict = None):
+    """S3에 파일 업로드 (메타데이터 포함)"""
     try:
-        print(file_path)
         with open(file_path, 'rb') as file:
+            extra_args = {'Metadata': metadata} if metadata else {}
             await asyncio.to_thread(
                 s3.upload_fileobj,
                 file,
                 bucket,
-                key
+                key,
+                ExtraArgs=extra_args
             )
+            logger.info(f"S3 업로드 성공: {key}")
     except Exception as e:
-        logger.error(f"S3 업로드 실패: {str(e)}")
+        print(f"S3 업로드 실패: {str(e)}")
         raise Exception(f"S3 업로드 실패: {str(e)}")
 
 
 def remove_markdown_blocks(content):
-    content = content.replace("```markdown", "")
-    content = content.replace(f"```\n```", "```")
+    if content.startswith("```markdown\n"):
+        content = content.replace("```markdown\n", "", 1)  # 첫 번째 ```markdown\n만 제거
+        content = re.sub(r"```$", "", content)  # 마지막 ``` 제거
     return content
+
+
+def timer(func):
+    """함수의 실행 시간을 측정하는 데코레이터"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()  # 시작 시간 기록
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()  # 종료 시간 기록
+        run_time = end_time - start_time  # 실행 시간 계산
+        print(f"Finished {func.__name__!r} in {run_time:.4f} secs")
+        return result
+    return wrapper
+
+def async_timer(func):
+    """함수의 실행 시간을 측정하는 데코레이터 (async 함수용)"""
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()  # 시작 시간 기록
+        result = await func(*args, **kwargs)  # await 추가
+        end_time = time.perf_counter()  # 종료 시간 기록
+        run_time = end_time - start_time  # 실행 시간 계산
+        print(f"Finished {func.__name__!r} in {run_time:.4f} secs")
+        return result
+    return wrapper

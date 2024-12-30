@@ -168,6 +168,16 @@ Analyze the following test file and generate a test document in Markdown format:
 - [ ] Verification Item 1
 - [ ] Verification Item 2
 
+## SUMMARY
+
+### Component Overview
+- Key features and capabilities
+
+### Architecture & Implementation
+- Major components and their roles
+- Critical flows and processes
+
+
 Instructions for Document Creation:
 
 1. Clearly explain the purpose of all test methods.
@@ -211,6 +221,15 @@ NEW_PROMPT_TEST_DOC_KOREAN = '''
 #### 검증 포인트
 - [ ] 검증 항목 1
 - [ ] 검증 항목 2
+
+## SUMMARY
+
+### Component Overview
+- 주요 기능 및 역량
+
+### Architecture & Implementation
+- 주요 구성 요소 및 역할
+- 주요 흐름 및 프로세스
 
 
 문서 작성 시 주의사항:
@@ -333,6 +352,15 @@ sequenceDiagram
     "error": "Error Message"
 }
 ```
+
+## SUMMARY
+
+### Component Overview
+- Key features and capabilities
+
+### Architecture & Implementation
+- Major components and their roles
+- Critical flows and processes
 '''
 
 
@@ -429,7 +457,17 @@ sequenceDiagram
     "error": "에러 메시지"
 }
 ```
+
+## SUMMARY
+
+### Component Overview
+- 주요 기능 및 역량
+
+### Architecture & Implementation
+- 주요 구성 요소 및 역할
+- 주요 흐름 및 프로세스
 '''
+
 
 AUGMENTATION_PROMPT = """You are an advanced AI system designed to generate optimized vector database search queries from user input. Your task is to analyze technical questions and convert them into efficient, precise queries that will yield the most relevant results from a vector database.
 

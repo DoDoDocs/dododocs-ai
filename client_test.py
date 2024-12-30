@@ -39,13 +39,13 @@ class ChatClient:
             return response.json()
 
         except requests.ConnectionError:
-            logger.error("서버에 연결할 수 없습니다.")
+            print("서버에 연결할 수 없습니다.")
             raise
         except requests.Timeout:
-            logger.error("요청 시간이 초과되었습니다.")
+            print("요청 시간이 초과되었습니다.")
             raise
         except requests.RequestException as e:
-            logger.error(f"문서 및 README 생성 API 요청 실패: {str(e)}")
+            print(f"문서 및 README 생성 API 요청 실패: {str(e)}")
             raise
 
     def chat(self, repo_name: str, query: str, chat_history: Optional[List[Dict[str, Any]]] = None, stream: bool = False) -> Union[str, Iterator[str]]:
@@ -69,7 +69,7 @@ class ChatClient:
                 return response.json()["answer"]
 
         except requests.RequestException as e:
-            logger.error(f"채팅 API 요청 실패: {str(e)}")
+            print(f"채팅 API 요청 실패: {str(e)}")
             raise
 
     def _stream_response(self, response) -> Iterator[str]:
@@ -81,8 +81,6 @@ class ChatClient:
 
 async def main():
     client = ChatClient()
-    # repo_url = "https://github.com/aa-25/msung99.git"
-    # repo_url = "https://github.com/spring-boot/spring-boot-projects.git"
     repo_url = "https://github.com/kakao-25/moheng.git"
     repo_name = "moheng"
     user_name = "kakao-25"

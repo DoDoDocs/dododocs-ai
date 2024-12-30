@@ -1,3 +1,17 @@
+import requests
+from openai import OpenAI
+import tiktoken
+import chromadb
+from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+import boto3
+import os
+import google.generativeai as genai
+from token_chunker import TokenChunker
+import json
+from chromadb.api.types import EmbeddingFunction, Embeddings
+from typing import List
+import logging
+from chromadb import *
 from openai import OpenAI
 import chromadb
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
@@ -5,68 +19,53 @@ import boto3
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
-from autotiktokenizer import AutoTikTokenizer
+import tiktoken
 from token_chunker import TokenChunker
-# .env 파일 로드
+import requests
+
 load_dotenv()
 
-# 환경 변수 가져오기
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-# 필수 환경 변수 확인
-# required_vars = [
-#     'OPENAI_API_KEY',
-#     'ANTHROPIC_API_KEY',
-#     'AWS_ACCESS_KEY_ID',
-#     'AWS_SECRET_ACCESS_KEY',
-#     'GEMINI_API_KEY'
-# ]
+def load_config(config_path: str) -> dict:
+    """설정 파일을 읽어와서 딕셔너리로 반환합니다."""
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        return config
+    except:
+        print("no exists json config")
+        return {}
 
-# for var in required_vars:
-#     if not os.getenv(var):
-#         raise ValueError(f"Required environment variable {var} is not set")
 
+EFS_CONFIG_PATH = os.getenv(
+    'EFS_CONFIG_PATH', 'config.json')
+config = load_config(EFS_CONFIG_PATH)
 
 """**PARAMETER SETTINGS**"""
-# 모델 설정
-MODEL = 'gemini-1.5-flash'
-GPT_MODEL = 'gpt-4o-mini'
-TEMPERATURE = 0.17
-SEED = 213
-TOP_LOGPROBS = 5  # logprob token 개수
+MODEL = config.get('model_name', 'gemini-1.5-pro')
+GPT_MODEL = config.get('gpt_model', 'gpt-4o-mini')
+TEMPERATURE = config.get('temperature', 0.17)
+SEED = config.get('seed', 213)
+TOP_LOGPROBS = config.get('top_logprobs', 5)
+EMBEDDING_MODEL = config.get('embedding_model_name', 'text-embedding-3-small')
+DISTANCE_TYPE = config.get('distance_type', 'inner_product')
+CHROMA_PATH = config.get('chroma_path', './chroma_DB')
+GPT_MAX_TOKENS = config.get('gpt_max_tokens', 120000)
+MAX_RETRIES = config.get('max_retries', 1)  # 최대 재시도 횟수
+RETRY_DELAY = config.get('retry_delay', 3)  # 재시도 간격 (초)
+INCLUDE_TEST = config.get('include_test', False)
+BUCKET_NAME = config.get('bucket_name', 'haon-dododocs')
 
-if MODEL.startswith('gpt' or 'claude'):
-    MAX_TOKENS_PER_BATCH = 1500000
-    MAX_TOKEN_LENGTH = 120000
-elif MODEL.startswith('gemini'):
-    MAX_TOKENS_PER_BATCH = 3500000
-    MAX_TOKEN_LENGTH = 1000000
 
-tokenizer = AutoTikTokenizer.from_pretrained("gpt2")
-chunker = TokenChunker(
-    tokenizer=tokenizer,
-    chunk_size=MAX_TOKEN_LENGTH,  # maximum tokens per chunk
-    chunk_overlap=128  # overlap between chunks
-)
-embedding_chunker = TokenChunker(
-    tokenizer=tokenizer,
-    chunk_size=8191,  # maximum tokens per chunk
-    chunk_overlap=2000  # overlap between chunks
-)
-embedding_model_name = os.getenv(
-    'EMBEDDING_MODEL_NAME', 'text-embedding-3-small')
-# 임베딩 모델과 차원 설정
-if embedding_model_name == "text-embedding-3-small":
-    EMBEDDING_MODEL = "text-embedding-3-small"
+
+MAX_TOKENS_PER_BATCH = 3500000
+MAX_TOKEN_LENGTH = 1000000
+
+
+    # 임베딩 모델과 차원 설정
+if EMBEDDING_MODEL == "text-embedding-3-small":
     EMBEDDING_DIM = 1536
-elif embedding_model_name == "text-embedding-3-large":
-    EMBEDDING_MODEL = "text-embedding-3-large"
+elif EMBEDDING_MODEL == "text-embedding-3-large":
     EMBEDDING_DIM = 3072
-
-DISTANCE_TYPE = "inner_product"
 
 if DISTANCE_TYPE == "cosine":
     DISTANCE = {"hnsw:space": "cosine"}
@@ -75,7 +74,17 @@ elif DISTANCE_TYPE == "inner_product":
 else:
     DISTANCE = {"hnsw:space": "l2"}
 
-GPT_MAX_TOKENS = 120000
+tokenizer = tiktoken.encoding_for_model(GPT_MODEL)
+chunker = TokenChunker(
+    tokenizer=tokenizer,
+    chunk_size=MAX_TOKEN_LENGTH,  # maximum tokens per chunk
+    chunk_overlap=128  # overlap between chunks
+)
+embedding_chunker = TokenChunker(
+    tokenizer=tokenizer,
+    chunk_size=8191,  # maximum tokens per chunk
+    chunk_overlap=128  # overlap between chunks
+)
 
 FILE_EXTENSIONS = [
     '.py', '.pyw', '.pyc', '.pyo',  # Python
@@ -101,7 +110,7 @@ FILE_EXTENSIONS = [
 ]
 
 EXCLUDE_DIRS = ['.git', 'node_modules', 'venv', '__pycache__', 'dist', 'tests',
-                'test', 'examples', 'example', '.DS_Store', 'gradle-wrapper', '__MACOSX']
+                'test', '.DS_Store', 'gradle-wrapper', '__MACOSX']
 
 BUILD_FILE_NAMES = [
     'Makefile', 'CMakeLists.txt', 'setup.py', 'main.py', 'pyproject.toml',
@@ -110,47 +119,23 @@ BUILD_FILE_NAMES = [
     'setup.cfg', 'requirements-dev.txt', 'tox.ini', 'configure.ac', 'config.h.in',
     '.csproj', '.sln', 'tsconfig.json', 'webpack.config.js', 'gulpfile.js',
     'rollup.config.js', 'build.gradle', 'settings.gradle', 'Jenkinsfile',
-    'Vagrantfile', 'Procfile', 'Brewfile', '.md', 'Dockerfile', 'docker-compose.yml', 'Makefile',
+    'Vagrantfile', 'Procfile', 'Brewfile', 'README.md', 'Dockerfile', 'docker-compose.yml', 'Makefile',
     'CMakeLists.txt', '.env', 'main.py', 'poetry.lock'
 ]
 
-SRC_FILE_NAMES = ['.py', '.js', '.ts', '.java', '.cpp',
-                  '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
-
-MAX_RETRIES = 2  # 최대 재시도 횟수
-RETRY_DELAY = 3  # 재시도 간격 (초)
-INCLUDE_TEST = False
+SRC_FILE_NAMES = [
+    '.py', '.js', '.ts', '.java', '.cpp',
+    '.h', '.hpp', '.cs', '.go', '.rs', '.rb', '.php']
 
 
-def get_openai_client():
-    return OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-
-def get_gemini_client(prompt: str):
-    genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-    return genai.GenerativeModel(
-        model_name=MODEL,
-        system_instruction=prompt,
-    )
-
-
-client_gemini = OpenAI(
-    api_key=os.getenv('GEMINI_API_KEY'),
-    base_url="https://generativelanguage.googleapis.com/v1beta/"
+OpenAI_client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv('OPENROUTER_API_KEY'),
 )
-# 환경 변수로 실행 환경 확인
-IS_DOCKER = os.getenv('IS_DOCKER', 'false').lower() == 'true'
-
-# 환경에 따른 경로 설정
-if IS_DOCKER:
-    CHROMA_PATH = "/app/chroma_data"  # Docker 환경
-else:
-    CHROMA_PATH = "./chroma_data"     # 로컬 환경
 
 # ChromaDB 클라이언트 초기화
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-embedding_function = OpenAIEmbeddingFunction(
-    api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
+
 
 # S3 클라이언트 생성
 s3 = boto3.client(
@@ -159,12 +144,52 @@ s3 = boto3.client(
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
 )
 
-BUCKET_NAME = 'haon-dododocs'
 
-# try:
-#     # 파일 다운로드
-#     s3.download_file(BUCKET_NAME, "moheng-develop.zip",
-#                      "/Users/kakao/Desktop/local_slm/ktb_final_project/moheng.zip")
-#     print(f"파일이 성공적으로 다운로드되었습니다: {"moheng-develop.zip"}")
-# except Exception as e:
-#     print(f"파일 다운로드 중 오류 발생: {str(e)}")
+class SelfEmbeddingFunction(EmbeddingFunction[List[str]]):
+    def __init__(self, timeout: int = 80):
+        self.timeout = timeout
+
+    def __call__(self, texts: List[str]) -> Embeddings:
+        try:
+            url = "https://api.openai.com/v1/embeddings"
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": EMBEDDING_MODEL,
+                "input": texts
+            }
+            response = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
+            response.raise_for_status()
+            data = response.json()
+            return [item['embedding'] for item in data['data']]
+        except requests.exceptions.Timeout:
+            print("Request timed out.")
+            return []
+        except Exception as e:
+            print(f"Error generating embeddings: {e}")
+            return []
+
+
+embedding_func = SelfEmbeddingFunction(timeout=60)
+
+
+
+
+def get_chroma_client():
+    try:
+        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+        print("ChromaDB client initialized successfully.")
+    except Exception as e:
+        print(f"Failed to initialize ChromaDB client: {e}")
+    return chroma_client
+
+
+def get_openai_client():
+    return OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+
+def get_embedding_function():
+    return OpenAIEmbeddingFunction(
+        api_key=os.getenv('OPENAI_API_KEY'), model_name=EMBEDDING_MODEL)
