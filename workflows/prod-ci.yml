@@ -1,0 +1,35 @@
+name: Prod CI on release
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }} 
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Tag Docker Image
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          echo "Using tag: $TAG"
+          docker build -t ${{ secrets.ECR_URI }}:$TAG .
+
+      - name: Push Docker Image to Amazon ECR
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          docker push ${{ secrets.ECR_URI }}:$TAG
