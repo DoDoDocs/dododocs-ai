@@ -1,9 +1,9 @@
 name: CI Pipeline
 
 on:
-  push:
-    branches:
-      - chat_server
+  # push:
+  #   branches:
+  #     - chat_server
 
 jobs:
   build-and-deploy:
