@@ -27,9 +27,9 @@ jobs:
         run: |
           TAG=${{ github.event.release.tag_name }}
           echo "Using tag: $TAG"
-          docker build -t ${{ secrets.ECR_URI }}:$TAG .
+          docker build -t ${{ secrets.ECR_DOCS_URI }}:$TAG .
 
       - name: Push Docker Image to Amazon ECR
         run: |
           TAG=${{ github.event.release.tag_name }}
-          docker push ${{ secrets.ECR_URI }}:$TAG
+          docker push ${{ secrets.ECR_DOCS_URI }}:$TAG
