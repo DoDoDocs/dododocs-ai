@@ -27,6 +27,7 @@ jobs:
         run: |
           TAG=${{ github.event.release.tag_name }}
           echo "Using tag: $TAG"
+          cd lambda_generate
           docker build -t ${{ secrets.ECR_DOCS_URI }}:$TAG .
 
       - name: Push Docker Image to Amazon ECR
